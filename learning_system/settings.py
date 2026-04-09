@@ -78,7 +78,7 @@ if not _USE_MYSQL:
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
+            "ENGINE": "learning_system.db_backends.mysql",
             "NAME": os.environ.get("MYSQL_DATABASE", "learning_db"),
             "USER": os.environ.get("MYSQL_USER", "root"),
             "PASSWORD": os.environ.get("MYSQL_PASSWORD", ""),
