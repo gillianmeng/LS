@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}球学堂{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* 顶栏：悬停 / 点按 统一蓝色电光（与「球学堂」深蓝发光气质一致） */
+      .hit-electric {
+        transition: box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease,
+          border-color 0.2s ease, transform 0.12s ease;
+      }
+      .hit-electric--pill:not(.hit-electric--on):hover,
+      .hit-electric--pill:not(.hit-electric--on):focus-visible {
+        color: #1d4ed8;
+        background-color: rgba(255, 255, 255, 0.96);
+        box-shadow:
+          0 0 14px rgba(59, 130, 246, 0.42),
+          0 0 24px rgba(37, 99, 235, 0.12),
+          inset 0 0 0 1px rgba(147, 197, 253, 0.65);
+        outline: none;
+      }
+      .hit-electric--pill:not(.hit-electric--on):active {
+        transform: scale(0.97);
+        box-shadow:
+          0 0 18px rgba(37, 99, 235, 0.5),
+          0 0 32px rgba(59, 130, 246, 0.22),
+          inset 0 0 0 1px rgba(96, 165, 250, 0.75);
+      }
+      .hit-electric--pill.hit-electric--on {
+        color: #1e3a8a;
+        background-color: #fff;
+        box-shadow:
+          0 0 16px rgba(59, 130, 246, 0.38),
+          0 0 28px rgba(37, 99, 235, 0.14),
+          inset 0 0 0 1px rgba(147, 197, 253, 0.75);
+      }
+      .hit-electric--pill.hit-electric--on:hover {
+        box-shadow:
+          0 0 18px rgba(59, 130, 246, 0.48),
+          0 0 32px rgba(37, 99, 235, 0.18),
+          inset 0 0 0 1px rgba(147, 197, 253, 0.85);
+      }
+      .hit-electric--pill.hit-electric--on:focus-visible {
+        outline: none;
+        box-shadow:
+          0 0 18px rgba(59, 130, 246, 0.48),
+          0 0 32px rgba(37, 99, 235, 0.18),
+          inset 0 0 0 1px rgba(147, 197, 253, 0.85);
+      }
+      .hit-electric--outline:hover,
+      .hit-electric--outline:focus-visible {
+        color: #1d4ed8;
+        border-color: rgba(96, 165, 250, 0.95);
+        background-color: rgba(239, 246, 255, 0.92);
+        box-shadow:
+          0 0 12px rgba(59, 130, 246, 0.38),
+          0 0 22px rgba(37, 99, 235, 0.12);
+        outline: none;
+      }
+      .hit-electric--outline:active {
+        transform: scale(0.98);
+        box-shadow:
+          0 0 16px rgba(37, 99, 235, 0.48),
+          0 0 28px rgba(59, 130, 246, 0.2);
+      }
+      .hit-electric--outline.hit-electric--on {
+        color: #1d4ed8;
+        border-color: rgba(96, 165, 250, 0.85);
+        box-shadow:
+          0 0 10px rgba(59, 130, 246, 0.25),
+          inset 0 0 0 1px rgba(191, 219, 254, 0.6);
+      }
+      .hit-electric--solid {
+        background-color: #2563eb;
+        color: #fff;
+      }
+      .hit-electric--solid:hover,
+      .hit-electric--solid:focus-visible {
+        background-color: #1d4ed8;
+        box-shadow:
+          0 0 16px rgba(59, 130, 246, 0.55),
+          0 0 28px rgba(37, 99, 235, 0.35);
+        outline: none;
+      }
+      .hit-electric--solid:active {
+        transform: scale(0.98);
+        box-shadow:
+          0 0 20px rgba(37, 99, 235, 0.65),
+          0 0 36px rgba(59, 130, 246, 0.4);
+      }
+      .hit-electric--ghost:hover,
+      .hit-electric--ghost:focus-visible {
+        color: #1d4ed8;
+        background-color: rgba(239, 246, 255, 0.95);
+        box-shadow:
+          0 0 12px rgba(59, 130, 246, 0.35),
+          0 0 20px rgba(37, 99, 235, 0.1);
+        outline: none;
+      }
+      .hit-electric--ghost:active {
+        transform: scale(0.97);
+        box-shadow: 0 0 16px rgba(37, 99, 235, 0.45);
+      }
+      .hit-electric--search:hover,
+      .hit-electric--search:focus-visible {
+        background-color: #2563eb;
+        color: #fff;
+        box-shadow:
+          0 0 14px rgba(59, 130, 246, 0.5),
+          0 0 26px rgba(37, 99, 235, 0.28);
+        outline: none;
+      }
+      .hit-electric--search:active {
+        transform: scale(0.98);
+        box-shadow:
+          0 0 18px rgba(37, 99, 235, 0.55),
+          0 0 32px rgba(59, 130, 246, 0.35);
+      }
+      /* 全局消息：悬浮半透明提示（不挤占正文） */
+      .app-toast-stack {
+        transition: opacity 0.25s ease, transform 0.25s ease;
+      }
+      .app-toast-stack.is-leaving {
+        opacity: 0;
+        transform: translateY(-0.5rem);
+      }
+      .hit-electric-field:focus {
+        border-color: rgba(59, 130, 246, 0.75);
+        box-shadow:
+          0 0 0 1px rgba(59, 130, 246, 0.35),
+          0 0 12px rgba(59, 130, 246, 0.22);
+        outline: none;
+      }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased{% block body_extra_class %}{% endblock %}">
+    <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-md">
+        <nav class="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-3 lg:grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-6">
+            <div class="flex min-w-0 items-center justify-between gap-3 lg:justify-start">
+                <a href="{% url 'home' %}" class="group relative inline-flex select-none items-center py-0.5 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2" aria-label="球学堂首页">
+                    <span class="text-xl font-black leading-none tracking-[0.14em] text-[#0a1628] [text-shadow:0_0_14px_rgba(37,99,235,0.55),0_0_28px_rgba(29,78,216,0.25)] transition-[text-shadow] duration-300 group-hover:[text-shadow:0_0_18px_rgba(37,99,235,0.65),0_0_36px_rgba(29,78,216,0.35)] sm:text-[1.65rem]">球学堂</span>
+                </a>
+            </div>
+            {% with rn=request.resolver_match.url_name %}
+            <div class="flex min-w-0 justify-center lg:px-2">
+            {% if user.is_authenticated %}
+            <div class="inline-flex max-w-full rounded-full bg-slate-100/95 p-1 shadow-inner ring-1 ring-slate-200/80">
+            <ul class="flex min-w-0 items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="主导航">
+                <li class="shrink-0">
+                    <a href="{% url 'home' %}" role="tab" aria-selected="{% if rn == 'home' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'home' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">首页</a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'courses:my_learning' %}" role="tab" aria-selected="{% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">我的学习</a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'shop:activity_center' %}" role="tab" aria-selected="{% if rn == 'activity_center' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'activity_center' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">活动广场</a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'shop:points_mall' %}" role="tab" aria-selected="{% if rn == 'points_mall' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'points_mall' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">积分商城</a>
+                </li>
+            </ul>
+            </div>
+            {% else %}
+            <p class="max-w-xl text-center text-[11px] leading-snug text-slate-500 sm:text-xs">登录后可使用在线课堂、活动广场与积分商城</p>
+            {% endif %}
+            </div>
+            {% endwith %}
+            <div class="flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
+                {% if user.is_authenticated %}
+                <a href="{% url 'search' %}" class="hit-electric hit-electric--ghost flex rounded-lg p-1.5 text-slate-500 sm:hidden" title="搜索" aria-label="搜索">🔍</a>
+                <form method="get" action="{% url 'search' %}" class="hidden max-w-[200px] flex items-stretch gap-1 sm:flex lg:max-w-[260px]" role="search">
+                    <label class="sr-only" for="nav-search-q">搜索课程、商品</label>
+                    <input type="search" id="nav-search-q" name="q" value="{{ request.GET.q|default:'' }}" placeholder="课程 / 商品"
+                        class="hit-electric-field w-full min-w-0 rounded-lg border border-slate-200 bg-white py-1.5 pl-2 pr-2 text-xs text-slate-800 placeholder:text-slate-400 transition-shadow duration-200">
+                    <button type="submit" class="hit-electric hit-electric--search shrink-0 rounded-lg bg-slate-100 px-2.5 text-xs font-medium text-slate-700">搜索</button>
+                </form>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <details class="relative z-50">
+                    <summary class="hit-electric hit-electric--ghost flex cursor-pointer list-none items-center gap-1 rounded-lg px-1 py-1 text-xs text-slate-600 marker:hidden [&::-webkit-details-marker]:hidden">
+                        <span class="relative inline-flex items-center">
+                            通知
+                            {% if nav_notification_unread_count %}
+                            <span class="absolute -right-2 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-0.5 text-[10px] font-semibold text-white" aria-label="未读 {{ nav_notification_unread_count }}">{% if nav_notification_unread_count > 99 %}99+{% else %}{{ nav_notification_unread_count }}{% endif %}</span>
+                            {% endif %}
+                        </span>
+                    </summary>
+                    <div class="absolute right-0 mt-1 max-h-[min(24rem,70vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 text-left shadow-lg">
+                        {% if nav_notification_items %}
+                        {% for item in nav_notification_items %}
+                        {% with n=item.notification %}
+                        <a href="{% url 'users:notification_open' n.pk %}" class="block border-b border-slate-50 px-3 py-2.5 text-sm last:border-b-0 hover:bg-slate-50 {% if item.unread %}border-l-2 border-l-sky-500 bg-sky-50/40{% endif %}">
+                            <span class="line-clamp-2 {% if item.unread %}font-semibold text-slate-900{% else %}text-slate-700{% endif %}">{{ n.title }}</span>
+                            {% if n.body %}<span class="mt-0.5 line-clamp-2 text-xs text-slate-500">{{ n.body }}</span>{% endif %}
+                        </a>
+                        {% endwith %}
+                        {% endfor %}
+                        {% else %}
+                        <p class="px-3 py-8 text-center text-xs text-slate-400">暂无通知</p>
+                        {% endif %}
+                        <div class="border-t border-slate-100 px-2 py-1.5 text-center text-[11px] text-slate-400">管理员可在后台发布「站内通知」</div>
+                    </div>
+                </details>
+                <span class="hidden items-center gap-2 sm:inline-flex" title="{{ user.real_name|default:user.emp_id }}">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="" width="32" height="32" class="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200">
+                    {% else %}
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{{ user.real_name|default:user.emp_id|slice:":1" }}</span>
+                    {% endif %}
+                    <span class="max-w-[8rem] truncate text-slate-700">{{ user.real_name|default:user.emp_id }}</span>
+                </span>
+                <form method="post" action="{% url 'users:logout' %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="hit-electric hit-electric--outline rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">退出</button>
+                </form>
+                {% else %}
+                <a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="hit-electric hit-electric--solid rounded-lg px-3 py-1.5 text-xs font-medium">登录</a>
+                {% endif %}
+                <a href="{% url 'admin:login' %}?next=/admin/" class="hit-electric hit-electric--outline inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 {% if request.path|slice:':6' == '/admin' %}hit-electric--on{% endif %}" title="管理后台登录">工作台</a>
+            </div>
+        </nav>
+    </header>
+    {% if messages %}
+    <div class="pointer-events-none fixed inset-x-0 top-16 z-[100] flex flex-col items-stretch gap-2 px-3 sm:top-[4.25rem] sm:items-end sm:px-4" role="region" aria-label="提示消息">
+        {% for message in messages %}
+        <div
+            class="app-toast-stack pointer-events-auto max-w-full rounded-xl border px-3.5 py-2.5 text-sm shadow-lg backdrop-blur-md sm:max-w-md
+            {% if 'error' in message.tags %} border-red-300/50 bg-red-600/85 text-white
+            {% elif 'warning' in message.tags %} border-amber-300/50 bg-amber-500/85 text-white
+            {% elif 'success' in message.tags %} border-emerald-300/50 bg-emerald-600/85 text-white
+            {% else %} border-slate-300/40 bg-slate-800/80 text-slate-50
+            {% endif %}"
+            data-app-toast
+            data-duration="6000"
+            role="status"
+        >
+            <div class="flex items-start gap-2">
+                <p class="min-w-0 flex-1 leading-snug">{{ message }}</p>
+                <button type="button" class="shrink-0 rounded-md p-0.5 opacity-80 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70" data-app-toast-close aria-label="关闭提示">✕</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+    (function () {
+      document.querySelectorAll("[data-app-toast]").forEach(function (el) {
+        var ms = parseInt(el.getAttribute("data-duration") || "5000", 10);
+        var close = function () {
+          if (el.classList.contains("is-leaving")) return;
+          el.classList.add("is-leaving");
+          setTimeout(function () { el.remove(); }, 280);
+        };
+        var t = setTimeout(close, ms);
+        var btn = el.querySelector("[data-app-toast-close]");
+        if (btn) {
+          btn.addEventListener("click", function () {
+            clearTimeout(t);
+            close();
+          });
+        }
+      });
+    })();
+    </script>
+    {% endif %}
+    <main class="mx-auto max-w-7xl px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

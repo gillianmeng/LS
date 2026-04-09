@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}订单 {{ order.order_no }} — 积分商城{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-6 pb-16 px-4 pt-6">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+        <a href="{% url 'shop:my_orders' %}" class="text-sky-600 hover:underline">← 我的订单</a>
+        <span class="text-slate-300">|</span>
+        <a href="{% url 'shop:points_mall' %}" class="text-slate-600 hover:text-sky-600">积分商城</a>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <p class="text-xs text-slate-500">订单号</p>
+                    <p class="font-mono text-lg font-semibold text-slate-900">{{ order.order_no }}</p>
+                </div>
+                <span class="rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-800">{{ order.get_status_display }}</span>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">下单时间 {{ order.created_at|date:"Y-m-d H:i:s" }} · 最近更新 {{ order.updated_at|date:"Y-m-d H:i" }}</p>
+        </div>
+
+        <div class="border-b border-slate-50 px-5 py-4">
+            <h2 class="text-sm font-semibold text-slate-800">商品信息</h2>
+            <div class="mt-3 flex gap-4">
+                <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                    {% if order.product.image %}
+                    <img src="{{ order.product.image.url }}" alt="" class="h-full w-full object-cover">
+                    {% else %}
+                    <div class="flex h-full w-full items-center justify-center text-2xl text-slate-300">🎁</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="font-medium text-slate-900">{{ order.product_name }}</p>
+                    <p class="mt-1 text-lg font-bold text-orange-500">{{ order.points_spent }} 积分</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-b border-slate-50 px-5 py-4">
+            <h2 class="text-sm font-semibold text-slate-800">领取方式</h2>
+            <p class="mt-2 text-sm text-slate-700">{{ order.get_delivery_type_display }}</p>
+            {% if order.delivery_type == "mail" %}
+            <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex gap-2"><dt class="w-20 shrink-0 text-slate-500">收件人</dt><dd class="text-slate-800">{{ order.recipient_name }}</dd></div>
+                <div class="flex gap-2"><dt class="w-20 shrink-0 text-slate-500">电话</dt><dd class="text-slate-800">{{ order.recipient_phone }}</dd></div>
+                <div class="flex gap-2"><dt class="w-20 shrink-0 text-slate-500">地址</dt><dd class="whitespace-pre-wrap text-slate-800">{{ order.address_detail }}</dd></div>
+            </dl>
+            {% if order.logistics_company or order.tracking_number %}
+            <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                <p class="text-xs font-medium text-slate-600">物流信息</p>
+                {% if order.logistics_company %}<p class="mt-1 text-slate-800">{{ order.logistics_company }}</p>{% endif %}
+                {% if order.tracking_number %}<p class="mt-0.5 font-mono text-slate-800">运单号 {{ order.tracking_number }}</p>{% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex gap-2"><dt class="w-20 shrink-0 text-slate-500">领取人</dt><dd class="text-slate-800">{{ order.recipient_name }}</dd></div>
+                <div class="flex gap-2"><dt class="w-20 shrink-0 text-slate-500">电话</dt><dd class="text-slate-800">{{ order.recipient_phone }}</dd></div>
+            </dl>
+            <div class="mt-4 rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-sm text-amber-950">
+                <p class="text-xs font-medium text-amber-900">领取说明</p>
+                <p class="mt-1 whitespace-pre-wrap">{{ order.pickup_location_note }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if order.buyer_remark %}
+        <div class="border-b border-slate-50 px-5 py-4">
+            <h2 class="text-sm font-semibold text-slate-800">买家备注</h2>
+            <p class="mt-2 whitespace-pre-wrap text-sm text-slate-700">{{ order.buyer_remark }}</p>
+        </div>
+        {% endif %}
+
+        {% if order_cancellable or order_can_edit_address %}
+        <div class="border-b border-slate-50 px-5 py-4">
+            <h2 class="text-sm font-semibold text-slate-800">售后与变更</h2>
+            <p class="mt-1 text-xs text-slate-500">邮寄订单在「待处理」时可修改收件信息；未发货前可申请取消并退回积分。</p>
+            <div class="mt-4 flex flex-wrap gap-3">
+                {% if order_can_edit_address %}
+                <a href="{% url 'shop:mall_order_edit_address' order.pk %}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm hover:border-sky-300 hover:text-sky-700">修改收件信息</a>
+                {% endif %}
+                {% if order_cancellable %}
+                <form action="{% url 'shop:mall_order_cancel' order.pk %}" method="post" class="inline" onsubmit="return confirm('确定取消该订单？积分将退回账户，库存将恢复。');">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50">取消订单</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="px-5 py-4 text-xs text-slate-400">
+            <p>下单员工：{{ order.employee.real_name }}（{{ order.employee.emp_id }}）</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{# 我的学习页：培训 / 考试 / 课程 / 报名 — SVG 图标 + 品牌色块 #}
+<section class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5" aria-label="学习快捷入口">
+    <div class="mb-4 flex items-center justify-between gap-2 px-0.5">
+        <h2 class="text-sm font-bold text-slate-800">快捷入口</h2>
+        <span class="text-[11px] text-slate-400">常用功能</span>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {# 我的培训 #}
+        <a href="{% url 'courses:my_training' %}"
+           class="group relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/90 px-3 py-4 text-center shadow-sm ring-1 ring-slate-100/80 transition duration-200 hover:-translate-y-0.5 hover:border-amber-200/80 hover:shadow-md hover:ring-amber-200/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25 ring-2 ring-white/50 transition group-hover:scale-105" aria-hidden="true">
+                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6M8 13h8M8 17h6M8 9h3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <span class="text-xs font-semibold text-slate-800 sm:text-sm">我的培训</span>
+            <span class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-400/0 via-amber-400/60 to-amber-400/0 opacity-0 transition group-hover:opacity-100" aria-hidden="true"></span>
+        </a>
+
+        {# 我的考试 #}
+        <a href="{% url 'courses:my_exams' %}"
+           class="group relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/90 px-3 py-4 text-center shadow-sm ring-1 ring-slate-100/80 transition duration-200 hover:-translate-y-0.5 hover:border-violet-200/80 hover:shadow-md hover:ring-violet-200/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/25 ring-2 ring-white/50 transition group-hover:scale-105" aria-hidden="true">
+                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="text-xs font-semibold text-slate-800 sm:text-sm">我的考试</span>
+            <span class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-violet-400/0 via-violet-400/60 to-violet-400/0 opacity-0 transition group-hover:opacity-100" aria-hidden="true"></span>
+        </a>
+
+        {# 我的课程 — 主入口强调 #}
+        <a href="{% url 'courses:my_courses' %}"
+           class="group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 border-sky-300/80 bg-gradient-to-b from-sky-50 to-white px-3 py-4 text-center shadow-md shadow-sky-500/10 ring-2 ring-sky-100 transition duration-200 hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-lg hover:shadow-sky-500/15 hover:ring-sky-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-600/30 ring-2 ring-white/60 transition group-hover:scale-105" aria-hidden="true">
+                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="text-xs font-bold text-sky-900 sm:text-sm">我的课程</span>
+            <span class="rounded-full bg-sky-100/90 px-2 py-0.5 text-[10px] font-medium text-sky-700">学习进度</span>
+        </a>
+
+        {# 我的报名 #}
+        <a href="{% url 'courses:my_applications' %}"
+           class="group relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/90 px-3 py-4 text-center shadow-sm ring-1 ring-slate-100/80 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200/80 hover:shadow-md hover:ring-emerald-200/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-white/50 transition group-hover:scale-105" aria-hidden="true">
+                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="text-xs font-semibold text-slate-800 sm:text-sm">我的报名</span>
+            <span class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-400/0 via-emerald-400/60 to-emerald-400/0 opacity-0 transition group-hover:opacity-100" aria-hidden="true"></span>
+        </a>
+    </div>
+</section>

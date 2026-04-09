@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}修改收件信息 — 订单 {{ order.order_no }}{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-xl space-y-6 pb-16 px-4 pt-6">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+        <a href="{% url 'shop:order_detail' order.pk %}" class="text-sky-600 hover:underline">← 返回订单</a>
+        <span class="text-slate-300">|</span>
+        <a href="{% url 'shop:points_mall' %}" class="text-slate-600 hover:text-sky-600">积分商城</a>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 class="text-lg font-semibold text-slate-900">修改收件信息</h1>
+        <p class="mt-1 font-mono text-sm text-slate-500">{{ order.order_no }}</p>
+        <p class="mt-2 text-xs text-slate-500">仅「待处理」的邮寄订单可修改；保存后将同步更新您的默认收货地址。</p>
+
+        <form method="post" class="mt-6 space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="mb-1 block text-xs text-slate-600">收件人</label>
+                <input type="text" name="recipient_name" value="{{ order.recipient_name }}" maxlength="50" required
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="mb-1 block text-xs text-slate-600">联系电话</label>
+                <input type="text" name="recipient_phone" value="{{ order.recipient_phone }}" maxlength="20" required
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="mb-1 block text-xs text-slate-600">收件地址</label>
+                <textarea name="address_detail" rows="4" required
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">{{ order.address_detail }}</textarea>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">保存</button>
+                <a href="{% url 'shop:order_detail' order.pk %}" class="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:border-slate-300">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

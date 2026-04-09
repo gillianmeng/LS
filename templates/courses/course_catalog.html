@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}全部课程 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-7xl space-y-6 pb-16 px-4 pt-6">
+    <nav class="text-sm text-slate-500" aria-label="面包屑">
+        <a href="{% url 'home' %}" class="hover:text-sky-600">首页</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-800">全部课程</span>
+    </nav>
+
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <h1 class="text-2xl font-bold text-slate-900">全部课程</h1>
+        <form method="get" action="{% url 'courses:course_catalog' %}" class="flex max-w-md flex-1 items-center gap-2 sm:max-w-sm" role="search">
+            {% if active_category_id %}
+            <input type="hidden" name="category" value="{{ active_category_id }}">
+            {% endif %}
+            <label class="sr-only" for="catalog-q">搜索课程名称</label>
+            <input type="search" id="catalog-q" name="q" value="{{ search_q }}" placeholder="搜索课程名称"
+                class="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+            <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">搜索</button>
+        </form>
+    </div>
+
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <aside class="w-full shrink-0 lg:max-w-[15rem]">
+            {% include "partials/course_category_nav.html" %}
+        </aside>
+        <div class="min-w-0 flex-1">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {% for course in courses %}
+            {% include "partials/course_card.html" with course=course only %}
+        {% empty %}
+            <p class="col-span-full py-16 text-center text-sm text-slate-400">暂无课程{% if search_q %}，请尝试其他关键词{% endif %}。</p>
+        {% endfor %}
+    </div>
+        </div>
+    </div>
+
+    <p class="text-center">
+        <a href="{% url 'home' %}#courses-section" class="text-sm text-sky-600 hover:underline">← 返回首页</a>
+    </p>
+</div>
+{% endblock %}

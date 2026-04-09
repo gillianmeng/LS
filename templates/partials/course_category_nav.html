@@ -1,0 +1,33 @@
+{# course_category_roots required; optional: active_category_id, search_q #}
+<nav class="rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm" aria-label="课程目录">
+    <p class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">课程目录</p>
+    <div class="max-h-[min(70vh,36rem)] overflow-y-auto pr-1">
+        {% for root in course_category_roots %}
+        <details
+            class="group border-b border-slate-100 last:border-b-0"
+            {% if active_category_id %}
+                {% if root.pk == active_category_id %}open{% else %}{% for child in root.children.all %}{% if child.pk == active_category_id %}open{% endif %}{% endfor %}{% endif %}
+            {% endif %}
+        >
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-2 py-2.5 pl-1 pr-0.5 font-semibold text-slate-800 marker:content-none [&::-webkit-details-marker]:hidden hover:text-sky-800">
+                <span>{{ root.name }}</span>
+                <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <ul class="space-y-0.5 border-l border-slate-200 pb-2 pl-3 ml-1.5">
+                {% for child in root.children.all %}
+                <li>
+                    <a href="{% url 'courses:course_catalog' %}?category={{ child.pk }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                       class="block rounded px-1 py-1 text-slate-600 hover:bg-slate-50 hover:text-sky-700{% if active_category_id == child.pk %} bg-sky-50 font-medium text-sky-800{% endif %}">
+                        {{ child.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </details>
+        {% empty %}
+        <p class="px-1 py-2 text-slate-400">暂无目录</p>
+        {% endfor %}
+    </div>
+</nav>

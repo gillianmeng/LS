@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}退换 / 售后 — 积分商城{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-5xl space-y-6 pb-16 px-4 pt-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">退换 / 售后</h1>
+            <p class="mt-1 text-sm text-slate-500">进入订单详情可取消未发货订单（退回积分）或修改邮寄地址（待处理时）。</p>
+        </div>
+        <a href="{% url 'shop:points_mall' %}" class="text-sm text-sky-600 hover:underline">返回积分商城</a>
+    </div>
+
+    {% if orders %}
+    <div class="space-y-4">
+        {% for o in orders %}
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-50 px-4 py-3 sm:px-5">
+                <div>
+                    <p class="font-mono text-sm text-slate-500">{{ o.order_no }}</p>
+                    <p class="mt-1 text-xs text-slate-400">{{ o.created_at|date:"Y-m-d H:i" }}</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">{{ o.get_status_display }}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-5">
+                <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    {% if o.product.image %}
+                    <img src="{{ o.product.image.url }}" alt="" class="h-full w-full object-cover">
+                    {% else %}
+                    <div class="flex h-full w-full items-center justify-center text-xl text-slate-300">🎁</div>
+                    {% endif %}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="font-medium text-slate-900">{{ o.product_name }}</p>
+                    <p class="mt-1 text-sm text-orange-600">{{ o.points_spent }} 积分</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ o.get_delivery_type_display }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'shop:order_detail' o.pk %}" class="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700">订单详情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center text-sm text-slate-500">
+        暂无订单，去 <a href="{% url 'shop:points_mall' %}" class="text-sky-600 hover:underline">积分商城</a> 逛逛吧。
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

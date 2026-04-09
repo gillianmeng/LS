@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}员工登录 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-slate-100{% endblock %}
+{% block content %}
+<div class="mx-auto flex max-w-md flex-col rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <h1 class="text-center text-xl font-bold text-slate-900">员工登录</h1>
+    <p class="mt-1 text-center text-sm text-slate-500">使用工号与密码</p>
+
+    {% if form.non_field_errors %}
+    <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'users:login' %}" class="mt-6 space-y-4">
+        {% csrf_token %}
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <div>
+            <label for="id_username" class="mb-1.5 block text-sm font-medium text-slate-700">{{ form.username.label }}</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="id_password" class="mb-1.5 block text-sm font-medium text-slate-700">{{ form.password.label }}</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="w-full rounded-lg bg-sky-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">登录</button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-slate-500">
+        还没有账号？<a href="{% url 'users:register' %}" class="font-medium text-sky-600 hover:underline">员工注册</a>
+    </p>
+</div>
+{% endblock %}

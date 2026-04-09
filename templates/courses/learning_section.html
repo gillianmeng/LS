@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — 球学堂{% endblock %}
+{% block content %}
+<div class="min-h-[calc(100vh-6rem)] bg-[#f5f7fa] -mx-4 -mt-8 px-4 pb-16 pt-6">
+    <div class="mx-auto max-w-6xl">
+        {# 一级 Tab：我的培训 | 我的外训 | 项目 #}
+        <nav class="flex flex-wrap gap-8 border-b border-slate-200" aria-label="我的学习模块">
+            <a
+                href="{% url 'courses:my_training' %}{% if learning_role %}?role={{ learning_role }}{% endif %}"
+                class="inline-block border-b-2 pb-3 text-lg font-bold transition {% if learning_primary == 'training' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}"
+            >我的培训</a>
+            <a
+                href="{% url 'courses:my_external' %}{% if learning_role %}?role={{ learning_role }}{% endif %}"
+                class="inline-block border-b-2 pb-3 text-lg font-bold transition {% if learning_primary == 'external' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}"
+            >我的外训</a>
+            <a
+                href="{% url 'courses:my_projects' %}"
+                class="inline-block border-b-2 pb-3 text-lg font-bold transition {% if learning_primary == 'projects' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}"
+            >项目</a>
+        </nav>
+
+        {% if learning_primary != 'projects' %}
+        {# 二级 Tab：我参与的 | 我申请的 #}
+        <div class="mt-6 flex gap-8 border-b border-slate-200 pb-0" role="tablist">
+            <a
+                href="{% if learning_primary == 'training' %}{% url 'courses:my_training' %}?role=joined{% else %}{% url 'courses:my_external' %}?role=joined{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if status_filter %}&status={{ status_filter|urlencode }}{% endif %}"
+                class="inline-block border-b-2 pb-2 text-sm font-medium transition {% if learning_role == 'joined' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-500 hover:text-sky-600{% endif %}"
+                role="tab"
+                aria-selected="{% if learning_role == 'joined' %}true{% else %}false{% endif %}"
+            >我参与的</a>
+            <a
+                href="{% if learning_primary == 'training' %}{% url 'courses:my_training' %}?role=applied{% else %}{% url 'courses:my_external' %}?role=applied{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if status_filter %}&status={{ status_filter|urlencode }}{% endif %}"
+                class="inline-block border-b-2 pb-2 text-sm font-medium transition {% if learning_role == 'applied' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-500 hover:text-sky-600{% endif %}"
+                role="tab"
+                aria-selected="{% if learning_role == 'applied' %}true{% else %}false{% endif %}"
+            >我申请的</a>
+        </div>
+        {% endif %}
+
+        {# 筛选 + 内容区 #}
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <form method="get" class="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-white px-4 py-3">
+                {% if learning_primary != 'projects' %}
+                <input type="hidden" name="role" value="{{ learning_role }}">
+                {% endif %}
+                <label class="relative">
+                    <span class="sr-only">状态</span>
+                    <select name="status" class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                        <option value="">状态</option>
+                        <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>进行中</option>
+                        <option value="done" {% if status_filter == 'done' %}selected{% endif %}>已结束</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待开始</option>
+                    </select>
+                    <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">▾</span>
+                </label>
+                <div class="relative min-w-[200px] flex-1 sm:min-w-[280px]">
+                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">🔍</span>
+                    <input type="search" name="q" value="{{ search_q }}" placeholder="请输入名称搜索" class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                </div>
+                <button type="button" class="text-sm text-slate-500 hover:text-sky-600">更多筛选 ▾</button>
+                <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">搜索</button>
+            </form>
+
+            <div class="bg-slate-50/80 px-4 py-16 sm:px-8">
+                <div class="mx-auto flex max-w-md flex-col items-center text-center">
+                    <div class="mb-6 text-sky-300" aria-hidden="true">
+                        <svg class="mx-auto h-40 w-40" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="40" y="120" width="120" height="50" rx="8" fill="#E2E8F0"/>
+                            <circle cx="100" cy="75" r="28" fill="#93C5FD"/>
+                            <path d="M85 95 L115 95 L110 125 L90 125 Z" fill="#60A5FA"/>
+                            <rect x="88" y="100" width="24" height="18" rx="2" fill="#F8FAFC" stroke="#CBD5E1"/>
+                            <circle cx="100" cy="55" r="6" fill="#FBBF24"/>
+                        </svg>
+                    </div>
+                    <p class="text-base text-slate-600">{{ empty_title }}</p>
+                    {% if empty_hint %}
+                        <p class="mt-2 text-sm text-slate-400">{{ empty_hint }}</p>
+                    {% endif %}
+                    <a href="{% url 'home' %}" class="mt-6 text-sm font-medium text-sky-600 hover:underline">随便转转</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

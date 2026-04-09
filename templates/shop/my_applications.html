@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}我的报名 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f0f2f5]{% endblock %}
+{% block content %}
+<div class="space-y-4 pb-16 -mx-4 -mt-8 px-4 pt-6">
+    <div class="mx-auto max-w-7xl">
+        <nav class="text-sm text-slate-500" aria-label="面包屑">
+            <a href="{% url 'courses:my_learning' %}" class="hover:text-sky-600">我的学习</a>
+            <span class="mx-2 text-slate-300">/</span>
+            <span class="text-slate-800">我的报名</span>
+        </nav>
+        <h1 class="mt-3 text-xl font-bold text-slate-900">我的报名</h1>
+        <p class="mt-1 text-sm text-slate-500">「已加入」为审核通过；「未加入」含待审核、未通过、已取消。分类标签与后台「培训活动 → 我的报名 · 分类标签」所选一致。</p>
+    </div>
+
+    <div class="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {# 已加入 / 未加入 + 视图切换 #}
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-3 pt-2 sm:px-5">
+            <div class="flex gap-1" role="tablist" aria-label="申请状态">
+                <a href="?joined=joined&category={{ app_category }}&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                    role="tab"
+                    class="inline-block border-b-2 px-3 py-3 text-sm font-medium sm:px-4 {% if joined_tab == 'joined' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}">已加入</a>
+                <a href="?joined=not_joined&category={{ app_category }}&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                    role="tab"
+                    class="inline-block border-b-2 px-3 py-3 text-sm font-medium sm:px-4 {% if joined_tab == 'not_joined' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}">未加入</a>
+            </div>
+            <div class="flex items-center gap-1 pb-2 pr-1" role="group" aria-label="视图">
+                <a href="?joined={{ joined_tab }}&category={{ app_category }}&view=grid{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                    class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-sky-600 {% if view_mode == 'grid' %}bg-slate-100 text-sky-700{% endif %}"
+                    title="网格视图"
+                    aria-pressed="{% if view_mode == 'grid' %}true{% else %}false{% endif %}">▦</a>
+                <a href="?joined={{ joined_tab }}&category={{ app_category }}&view=list{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                    class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-sky-600 {% if view_mode == 'list' %}bg-slate-100 text-sky-700{% endif %}"
+                    title="列表视图"
+                    aria-pressed="{% if view_mode == 'list' %}true{% else %}false{% endif %}">☰</a>
+            </div>
+        </div>
+
+        {# 分类筛选（与后台「我的报名中的类型」一致） #}
+        <nav class="flex flex-wrap gap-2 border-b border-slate-100 px-3 py-3 sm:px-5" aria-label="活动类型">
+            <a href="?joined={{ joined_tab }}&category=training&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'training' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">培训</a>
+            <a href="?joined={{ joined_tab }}&category=activity&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'activity' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">活动</a>
+            <a href="?joined={{ joined_tab }}&category=selection&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'selection' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">评选</a>
+            <a href="?joined={{ joined_tab }}&category=lecturer_cert&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'lecturer_cert' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">讲师级别认证</a>
+            <a href="?joined={{ joined_tab }}&category=course_auth&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'course_auth' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">课程授权认证</a>
+            <a href="?joined={{ joined_tab }}&category=external&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'external' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">外训</a>
+            <a href="?joined={{ joined_tab }}&category=independent&view={{ view_mode }}{% if participation %}&participation={{ participation|urlencode }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+                class="rounded-lg border px-3 py-1.5 text-sm font-medium {% if app_category == 'independent' %}border-sky-600 text-sky-700{% else %}border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700{% endif %}">独立报名</a>
+        </nav>
+
+        <form method="get" class="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
+            <input type="hidden" name="joined" value="{{ joined_tab }}">
+            <input type="hidden" name="category" value="{{ app_category }}">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <label class="relative">
+                <span class="sr-only">参与方式</span>
+                <select name="participation" class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                    <option value="">参与方式</option>
+                    <option value="self" {% if participation == 'self' %}selected{% endif %}>自报名</option>
+                    <option value="assign" {% if participation == 'assign' %}selected{% endif %}>指派</option>
+                    <option value="invite" {% if participation == 'invite' %}selected{% endif %}>邀请</option>
+                </select>
+                <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">▾</span>
+            </label>
+            <div class="relative min-w-[180px] flex-1 sm:max-w-xs">
+                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                <input type="search" name="q" value="{{ search_q }}" placeholder="搜索活动名称" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400">
+            </div>
+            <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">搜索</button>
+        </form>
+
+        {% if application_list %}
+            {% if view_mode == 'grid' %}
+            <div class="p-4 sm:p-5">
+                <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {% for reg in application_list %}
+                    <li>
+                        <a href="{% url 'shop:training_detail' reg.training.pk %}" class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md">
+                            <div class="relative aspect-[16/9] bg-gradient-to-br from-sky-100 to-indigo-100">
+                                {% if reg.training.cover %}
+                                <img src="{{ reg.training.cover.url }}" alt="" class="absolute inset-0 h-full w-full object-cover">
+                                {% else %}
+                                <div class="flex h-full w-full items-center justify-center text-4xl text-sky-500/40" aria-hidden="true">📋</div>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-1 flex-col p-4">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium
+                                        {% if reg.status == 'approved' %}bg-emerald-100 text-emerald-800
+                                        {% elif reg.status == 'pending' %}bg-amber-100 text-amber-900
+                                        {% elif reg.status == 'rejected' %}bg-red-50 text-red-800
+                                        {% else %}bg-slate-100 text-slate-600{% endif %}">{{ reg.get_status_display }}</span>
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{{ reg.training.get_applications_category_display }}</span>
+                                </div>
+                                <h3 class="mt-2 line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-sky-700">{{ reg.training.title }}</h3>
+                                <p class="mt-2 text-xs text-slate-500">
+                                    {% if reg.training.instructor_name %}讲师 {{ reg.training.instructor_name|truncatechars:16 }} · {% endif %}
+                                    {% if reg.training.start_at %}{{ reg.training.start_at|date:"Y-m-d H:i" }}{% elif reg.training.schedule_note %}{{ reg.training.schedule_note|truncatechars:24 }}{% else %}时间见详情{% endif %}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <ul class="divide-y divide-slate-100">
+                {% for reg in application_list %}
+                <li>
+                    <a href="{% url 'shop:training_detail' reg.training.pk %}" class="flex flex-col gap-3 px-4 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <div class="flex min-w-0 gap-4">
+                            {% if reg.training.cover %}
+                            <span class="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+                                <img src="{{ reg.training.cover.url }}" alt="" class="h-full w-full object-cover" loading="lazy">
+                            </span>
+                            {% endif %}
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium
+                                        {% if reg.status == 'approved' %}bg-emerald-100 text-emerald-800
+                                        {% elif reg.status == 'pending' %}bg-amber-100 text-amber-900
+                                        {% elif reg.status == 'rejected' %}bg-red-50 text-red-800
+                                        {% else %}bg-slate-100 text-slate-600{% endif %}">{{ reg.get_status_display }}</span>
+                                    <span class="text-[11px] text-slate-500">{{ reg.training.get_applications_category_display }}</span>
+                                </div>
+                                <p class="mt-1 font-medium text-slate-900">{{ reg.training.title }}</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {% if reg.training.instructor_name %}讲师 {{ reg.training.instructor_name }} · {% endif %}
+                                    {% if reg.training.start_at %}{{ reg.training.start_at|date:"Y-m-d H:i" }}{% elif reg.training.schedule_note %}{{ reg.training.schedule_note|truncatechars:40 }}{% else %}时间见详情{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="shrink-0 text-sm font-medium text-sky-600">查看详情</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        {% else %}
+            {% if view_mode == 'grid' %}
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 text-center sm:col-span-2 lg:col-span-4">
+                        <span class="text-4xl text-slate-300" aria-hidden="true">📋</span>
+                        <p class="mt-3 text-sm text-slate-500">暂无记录</p>
+                        <p class="mt-1 max-w-md text-xs text-slate-400">当前分类与状态下没有报名记录。若已通过审核，请在「已加入」中查看；标签请在管理后台「培训活动」里设置「我的报名 · 分类标签」。</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="divide-y divide-slate-100 px-4 py-12 text-center sm:px-5">
+                <span class="text-4xl text-slate-300" aria-hidden="true">📋</span>
+                <p class="mt-3 text-sm text-slate-500">暂无记录</p>
+                <p class="mt-1 text-xs text-slate-400">切换分类或「已加入 / 未加入」后重试。</p>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

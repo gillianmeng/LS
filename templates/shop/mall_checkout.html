@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}确认订单 — 积分商城{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-6 pb-16 px-4 pt-6">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+        <a href="{{ mall_back }}" class="text-sky-600 hover:underline">← 返回商城</a>
+        <span class="text-slate-300">|</span>
+        <a href="{% url 'shop:my_orders' %}" class="text-slate-600 hover:text-sky-600">我的订单</a>
+    </div>
+
+    <h1 class="text-2xl font-bold text-slate-800">确认兑换订单</h1>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex gap-4 border-b border-slate-100 p-4 sm:p-5">
+            <div class="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="" class="h-full w-full object-cover">
+                {% else %}
+                <div class="flex h-full w-full items-center justify-center text-3xl text-slate-300">🎁</div>
+                {% endif %}
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="font-medium text-slate-900">{{ product.name }}</p>
+                <p class="mt-2 text-2xl font-bold tabular-nums text-orange-500">{{ points_cost }} <span class="text-sm font-medium">积分</span></p>
+                <p class="mt-1 text-xs text-slate-500">库存 {{ product.stock }} · 当前可用积分 {{ user.points_balance }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6 p-4 sm:p-5" id="checkout-form">
+            {% csrf_token %}
+            <input type="hidden" name="return_q" value="{{ return_q }}">
+            <input type="hidden" name="return_affordable" value="{{ return_affordable }}">
+            <input type="hidden" name="return_sort" value="{{ return_sort }}">
+
+            {% if form.non_field_errors %}
+            <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div>
+                <p class="mb-2 text-sm font-medium text-slate-700">{{ form.delivery_type.label }}</p>
+                <div class="flex flex-col gap-2 sm:flex-row sm:gap-6">
+                    {% for radio in form.delivery_type %}
+                    <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-4 py-3 has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50">
+                        {{ radio.tag }}
+                        <span class="text-sm text-slate-800">{{ radio.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="space-y-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+                <p class="text-sm font-medium text-slate-700">联系人</p>
+                <p class="text-xs text-slate-500">邮寄填收件人；现场领取填领取人，用于核对身份。</p>
+                <div>
+                    <label class="mb-1 block text-xs text-slate-600">{{ form.recipient_name.label }}</label>
+                    {{ form.recipient_name }}
+                    {% if form.recipient_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.recipient_name.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs text-slate-600">{{ form.recipient_phone.label }}</label>
+                    {{ form.recipient_phone }}
+                    {% if form.recipient_phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.recipient_phone.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div id="panel-mail" class="space-y-4 rounded-xl border border-sky-100 bg-sky-50/40 p-4">
+                <p class="text-sm font-medium text-slate-700">收件地址（邮寄必填）</p>
+                <div>
+                    <label class="mb-1 block text-xs text-slate-600">{{ form.address_detail.label }}</label>
+                    {{ form.address_detail }}
+                    {% if form.address_detail.errors %}<p class="mt-1 text-xs text-red-600">{{ form.address_detail.errors.0 }}</p>{% endif %}
+                </div>
+                <label class="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
+                    {{ form.save_address }}
+                    <span class="leading-snug">{{ form.save_address.label }}</span>
+                </label>
+                {% if form.save_address.errors %}<p class="text-xs text-red-600">{{ form.save_address.errors.0 }}</p>{% endif %}
+            </div>
+
+            <div id="panel-pickup" class="hidden space-y-4 rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+                <p class="text-sm font-medium text-slate-700">现场领取说明</p>
+                <p class="text-xs leading-relaxed text-slate-600">{{ default_pickup_hint }}</p>
+                <div>
+                    <label class="mb-1 block text-xs text-slate-600">{{ form.pickup_location_note.label }}</label>
+                    {{ form.pickup_location_note }}
+                </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs text-slate-600">{{ form.buyer_remark.label }}</label>
+                {{ form.buyer_remark }}
+            </div>
+
+            <div class="flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                <button type="submit" class="rounded-xl bg-orange-500 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600">提交订单并扣减积分</button>
+                <a href="{{ mall_back }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">取消</a>
+            </div>
+            <p class="text-xs text-slate-400">提交后将从账户扣除相应积分并占用 1 件库存；邮寄订单由行政统一发货，现场领取请按说明前往。</p>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById("checkout-form");
+    if (!form) return;
+    var mail = document.getElementById("panel-mail");
+    var pickup = document.getElementById("panel-pickup");
+    function sync() {
+        var v = form.querySelector('input[name="delivery_type"]:checked');
+        if (!v) return;
+        if (v.value === "mail") {
+            mail.classList.remove("hidden");
+            pickup.classList.add("hidden");
+        } else {
+            mail.classList.add("hidden");
+            pickup.classList.remove("hidden");
+        }
+    }
+    form.querySelectorAll('input[name="delivery_type"]').forEach(function (el) {
+        el.addEventListener("change", sync);
+    });
+    sync();
+})();
+</script>
+{% endblock %}

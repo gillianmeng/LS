@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block title %}我的学习 — 球学堂{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    {# 桌面：左 3 列（用户卡 · 学习历史 · 积分榜）+ 中 9 列主区展开；移动：先中栏再左栏 #}
+    <div class="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+        {# —— 左栏：用户卡 + 积分榜（桌面第 1 列，移动第 2 块）—— #}
+        <aside class="order-2 space-y-6 lg:order-1 lg:col-span-3">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
+                        {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="" width="48" height="48" class="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-slate-100">
+                        {% else %}
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg font-bold text-sky-700" aria-hidden="true">
+                            {{ user.real_name|slice:":1" }}
+                        </div>
+                        {% endif %}
+                        <div class="min-w-0">
+                            <p class="truncate font-semibold text-slate-900">{{ user.real_name }}</p>
+                            <p class="text-xs text-slate-500">工号 {{ user.emp_id }}</p>
+                            {% if user.signature %}
+                            <p class="mt-1 line-clamp-3 whitespace-pre-wrap break-words text-[11px] leading-snug text-slate-500">{{ user.signature }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
+                        <p class="text-xs text-slate-600">我的可用积分</p>
+                        <p class="text-2xl font-bold tabular-nums text-orange-600">{{ user.points_balance }}</p>
+                    </div>
+                    <form method="post" action="{% url 'courses:my_profile_update' %}" enctype="multipart/form-data" class="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                        {% csrf_token %}
+                        <p class="text-xs font-medium text-slate-700">头像与签名档</p>
+                        <div>
+                            <label class="mb-1 block text-xs text-slate-500" for="profile-avatar">上传头像</label>
+                            <input id="profile-avatar" type="file" name="avatar" accept="image/*"
+                                class="block w-full text-xs text-slate-600 file:mr-2 file:rounded-lg file:border-0 file:bg-sky-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky-800 hover:file:bg-sky-100">
+                        </div>
+                        {% if user.avatar %}
+                        <label class="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+                            <input type="checkbox" name="clear_avatar" value="1" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                            清除当前头像
+                        </label>
+                        {% endif %}
+                        <div>
+                            <label class="mb-1 block text-xs text-slate-500" for="profile-signature">签名档</label>
+                            <textarea id="profile-signature" name="signature" rows="2" maxlength="500" placeholder="写一句个性签名…"
+                                class="w-full resize-y rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">{{ user.signature }}</textarea>
+                        </div>
+                        <button type="submit" class="w-full rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700">保存</button>
+                    </form>
+                    <dl class="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+                        <div class="rounded-lg bg-slate-50 py-2.5">
+                            <dt class="text-xs text-slate-500">今日学习</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 py-2.5">
+                            <dt class="text-xs text-slate-500">获得证书</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 py-2.5">
+                            <dt class="text-xs text-slate-500">总学分</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                        </div>
+                    </dl>
+            </div>
+
+            {# 左侧第 2 模块：学习历史（原在右栏，主区改为 9 列展开） #}
+            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-bold text-slate-800">学习历史</h2>
+                    <a href="{% url 'courses:my_courses' %}" class="shrink-0 text-xs text-sky-600 hover:underline">查看更多 &gt;</a>
+                </div>
+                    <ul class="mt-4 max-h-[min(22rem,55vh)] space-y-3 overflow-y-auto pr-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200">
+                        {% for rec in learning_history %}
+                            <li class="border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                                <p class="text-xs text-slate-400">
+                                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">[课程]</span>
+                                </p>
+                                <a href="{% url 'courses:course_detail' rec.course.pk %}" class="mt-1.5 line-clamp-2 block text-sm font-medium text-slate-800 hover:text-sky-700">{{ rec.course.name }}</a>
+                                <p class="mt-1 text-xs text-slate-400">学习时长 —</p>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                                        <div class="js-learning-progress h-full min-w-0 rounded-full bg-sky-500" data-progress="{{ rec.progress_percentage }}"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-500">进度 {{ rec.progress_percentage }}%</span>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="py-6 text-center text-sm text-slate-400">暂无学习记录</li>
+                        {% endfor %}
+                    </ul>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <h2 class="text-sm font-bold text-slate-800">积分排行榜</h2>
+                        <p class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] leading-snug text-slate-500">
+                            <span class="rounded border border-slate-200 bg-white px-1.5 py-0.5">{{ leaderboard_settings.time_range_label }}</span>
+                            {% if leaderboard_settings.display_footnote %}
+                            <span class="text-slate-400">{{ leaderboard_settings.display_footnote }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <a href="{% url 'home' %}#leaderboard" class="shrink-0 text-xs text-sky-600 hover:underline">查看全部 &gt;</a>
+                </div>
+                <ul class="mt-4 space-y-3">
+                    {% for emp in leaderboard_sidebar %}
+                        <li class="flex items-center gap-3 text-sm">
+                            <span class="flex w-6 shrink-0 justify-center font-semibold {% if forloop.counter == 1 %}text-amber-500{% elif forloop.counter == 2 %}text-slate-400{% elif forloop.counter == 3 %}text-amber-700{% else %}text-slate-400{% endif %}">{{ forloop.counter }}</span>
+                            {% if emp.avatar %}
+                            <img src="{{ emp.avatar.url }}" alt="" width="32" height="32" class="h-8 w-8 shrink-0 rounded-full object-cover">
+                            {% else %}
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">{{ emp.real_name|slice:":1" }}</div>
+                            {% endif %}
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate font-medium text-slate-800">{{ emp.real_name }}</p>
+                                <p class="truncate text-xs text-slate-500">{{ emp.dept_level_2|default:emp.dept_level_1|default:"—" }}</p>
+                            </div>
+                            <span class="shrink-0 text-xs font-semibold text-sky-600">{{ emp.points_balance }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="py-6 text-center text-sm text-slate-400">暂无排行数据</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </aside>
+
+        {# —— 中栏：Banner + 快捷条 + 学习任务 + 最热（移动第 1 块；桌面 9 列展开）—— #}
+        <div class="order-1 space-y-6 lg:order-2 lg:col-span-9">
+            <section>
+                <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                    <img
+                        src="{% if banner_config.banner_my_learning %}{{ banner_config.banner_my_learning.url }}{% else %}{% static 'img/banners/banner_my_learning.png' %}{% endif %}"
+                        alt="欢迎加入雪球，开启你的滚雪球之旅"
+                        class="h-auto w-full object-cover object-center"
+                        width="1200"
+                        height="300"
+                        loading="eager"
+                    >
+                </div>
+            </section>
+
+            {% include "partials/my_learning_quick_entry.html" %}
+
+            <section id="tasks" class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="text-base font-bold text-slate-900">
+                        学习任务
+                        <span class="ml-1 text-sm font-normal text-slate-400">({{ learning_tasks|length }})</span>
+                    </h2>
+                    <div class="flex flex-wrap gap-2 text-xs text-slate-600">
+                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">全部分类 <span class="text-slate-400">▾</span></span>
+                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">全部状态 <span class="text-slate-400">▾</span></span>
+                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">截止时间升序 <span class="text-slate-400">▾</span></span>
+                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">不限时间 <span class="text-slate-400">▾</span></span>
+                    </div>
+                </div>
+                    <ul class="mt-4 space-y-3">
+                        {% for course in learning_tasks %}
+                            <li>
+                                <a href="{% url 'courses:course_detail' course.pk %}" class="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm transition hover:border-sky-200 hover:bg-sky-50/60">
+                                    <span class="min-w-0 flex-1 truncate font-medium text-slate-800">{{ course.name }}</span>
+                                    <span class="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">必修</span>
+                                </a>
+                            </li>
+                        {% empty %}
+                            <div class="flex flex-col items-center py-12 text-center text-slate-400">
+                                <span class="text-5xl">📖</span>
+                                <p class="mt-4 text-sm">暂无学习任务</p>
+                            </div>
+                        {% endfor %}
+                    </ul>
+            </section>
+
+            <section>
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900">最热内容</h2>
+                    <a href="{% url 'courses:course_catalog' %}" class="text-sm text-sky-600 hover:underline">全部课程 &gt;</a>
+                </div>
+                <div class="space-y-8">
+                    {% for block in courses_hottest_blocks %}
+                        <div>
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                {% if block.title %}
+                                    <h3 class="text-sm font-bold text-slate-800">{{ block.title }}</h3>
+                                {% else %}
+                                    <h3 class="text-sm font-bold text-slate-800">{{ block.category.name }}</h3>
+                                    <a href="{% url 'courses:course_catalog' %}?category={{ block.category.pk }}" class="text-xs text-sky-600 hover:underline">该栏目更多 &gt;</a>
+                                {% endif %}
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {% for course in block.courses %}
+                                    {% include "partials/course_card.html" with course=course show_learning_cta=True compact=True only %}
+                                {% empty %}
+                                    <p class="col-span-full py-6 text-center text-sm text-slate-400">该分类下暂无热门课程</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="py-10 text-center text-sm text-slate-400">暂无课程，请稍后在课程中心查看。</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-200/80 pt-8 text-center text-xs text-slate-400">
+        <p class="space-x-4">
+            <a href="{% url 'home' %}" class="hover:text-slate-600">网站首页</a>
+            <a href="#" class="hover:text-slate-600">用户中心</a>
+            <a href="#" class="hover:text-slate-600">建议反馈</a>
+        </p>
+        <p class="mt-2">© {% now "Y" %} 球学堂 · 企业内部学习平台</p>
+    </footer>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  document.querySelectorAll(".js-learning-progress[data-progress]").forEach(function (el) {
+    var v = parseFloat(el.getAttribute("data-progress"), 10);
+    if (isNaN(v)) v = 0;
+    el.style.width = Math.min(100, Math.max(0, v)) + "%";
+  });
+})();
+</script>
+{% endblock %}

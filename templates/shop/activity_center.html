@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}活动广场 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+{# 按钮与「我的学习」对齐：主按钮 sky-600 + shadow-sm；次按钮白底描边；表单 focus 用 sky-500 #}
+<div class="space-y-6 pb-16">
+    {# 顶部 Banner（全宽） #}
+    <div class="mx-auto max-w-7xl">
+        <section class="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm">
+            <div class="relative aspect-[10/3] w-full">
+                <img
+                    src="{% if banner_config.banner_activity_plaza %}{{ banner_config.banner_activity_plaza.url }}{% else %}{% static 'img/banners/activity_plaza_banner.png' %}{% endif %}"
+                    alt="成长加油站：在繁忙的职场中，每一次点击都是自我提升的机会。涵盖管理、营销、技术等领域的学习活动。"
+                    class="absolute inset-0 h-full w-full object-cover object-center"
+                    width="1200"
+                    height="360"
+                    loading="eager"
+                    decoding="async"
+                >
+            </div>
+        </section>
+    </div>
+
+    {# 培训列表：筛选 + 展示，详情页报名 #}
+    <div class="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <div class="border-b border-slate-200/80 px-4 py-3 sm:px-6">
+            <h2 class="text-base font-semibold text-slate-900">培训活动</h2>
+            <p class="mt-0.5 text-xs text-slate-500">浏览已发布培训，进入详情报名或外链报名。</p>
+        </div>
+
+        <form method="get" action="{% url 'shop:activity_center' %}" class="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+            <label class="relative">
+                <span class="sr-only">状态</span>
+                <select name="status" class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                    <option value="">全部状态</option>
+                    <option value="not_started" {% if activity_status == 'not_started' %}selected{% endif %}>未开始</option>
+                    <option value="ongoing" {% if activity_status == 'ongoing' %}selected{% endif %}>进行中</option>
+                    <option value="ended" {% if activity_status == 'ended' %}selected{% endif %}>已结束</option>
+                </select>
+                <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">▾</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-600">
+                <span>开始时间</span>
+                <input type="date" name="start" value="{{ start_date }}" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+            </label>
+            <div class="relative min-w-[180px] flex-1 sm:max-w-xs">
+                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                <input type="search" name="q" value="{{ search_q }}" placeholder="请输入名称搜索" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+            </div>
+            <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2">搜索</button>
+        </form>
+
+        {% if training_list %}
+            <ul class="divide-y divide-slate-100">
+                {% for t in training_list %}
+                <li class="px-4 py-4 sm:px-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="flex min-w-0 gap-4">
+                            {% if t.cover %}
+                            <a href="{% url 'shop:training_detail' t.pk %}" class="h-24 w-32 shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-28 sm:w-40">
+                                <img src="{{ t.cover.url }}" alt="" class="h-full w-full object-cover" loading="lazy" decoding="async">
+                            </a>
+                            {% endif %}
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    {% with s=t.schedule_status %}
+                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium
+                                        {% if s == 'flexible' %}bg-violet-100 text-violet-800
+                                        {% elif s == 'not_started' %}bg-slate-100 text-slate-700
+                                        {% elif s == 'ongoing' %}bg-emerald-100 text-emerald-800
+                                        {% else %}bg-slate-200 text-slate-600{% endif %}">
+                                        {% if s == 'flexible' %}待定{% elif s == 'not_started' %}未开始{% elif s == 'ongoing' %}进行中{% else %}已结束{% endif %}
+                                    </span>
+                                    {% endwith %}
+                                </div>
+                                <a href="{% url 'shop:training_detail' t.pk %}" class="mt-1 block text-base font-semibold text-slate-900 hover:text-sky-700">{{ t.title }}</a>
+                                {% if t.summary %}
+                                <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ t.summary }}</p>
+                                {% endif %}
+                                <p class="mt-2 text-xs text-slate-500">
+                                    {% if t.instructor_name %}讲师 {{ t.instructor_name }} · {% endif %}
+                                    {% if t.start_at %}{{ t.start_at|date:"Y-m-d H:i" }} 起{% elif t.schedule_note %}{{ t.schedule_note|truncatechars:48 }}{% else %}时间见详情{% endif %}
+                                    {% if t.location %} · {{ t.location }}{% endif %}
+                                    {% if t.promotional_url %} · <a href="{{ t.promotional_url }}" class="text-violet-700 hover:underline" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">活动资料</a>{% endif %}
+                                    {% if t.registration_external_url %} · <span class="text-sky-600">外链报名</span>{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <a href="{% url 'shop:training_detail' t.pk %}" class="inline-flex shrink-0 items-center justify-center self-start rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition sm:self-center {% if user.is_authenticated and t.pk in pending_training_ids %}border-amber-200/90 bg-amber-50 text-amber-900 hover:border-amber-300 hover:bg-amber-50/90{% elif user.is_authenticated and t.pk in approved_training_ids %}border-emerald-200/80 bg-emerald-50 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-50{% else %}border-slate-200/80 bg-white text-sky-700 hover:border-sky-300 hover:bg-sky-50{% endif %}">{% if user.is_authenticated and t.pk in pending_training_ids %}审核中{% elif user.is_authenticated and t.pk in approved_training_ids %}已报名{% else %}详情 / 报名{% endif %}</a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="flex min-h-[220px] flex-col items-center justify-center bg-white px-4 py-10 text-center sm:py-12">
+                <img src="{% static 'img/activity_plaza_list_empty.png' %}" alt="" class="mx-auto h-auto w-full max-w-lg object-contain" width="640" height="360" loading="lazy" decoding="async">
+                <p class="mt-5 text-sm text-slate-500">暂无培训活动，请稍后再来或联系管理员发布。</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <footer class="mx-auto max-w-7xl border-t border-slate-200/80 pt-8 text-center text-xs text-slate-400">
+        <p><a href="{% url 'home' %}" class="hover:text-slate-600">网站首页</a></p>
+        <p class="mt-2">© {% now "Y" %} 球学堂 · 企业内部学习平台</p>
+    </footer>
+
+</div>
+{% endblock %}

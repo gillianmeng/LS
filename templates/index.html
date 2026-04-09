@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}首页 — 球学堂{% endblock %}
+{% block content %}
+<div class="space-y-10">
+    {# 首页 Banner：紧挨导航下方，全宽横图 #}
+    <section class="-mt-2" aria-label="球学堂横幅">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+            <img
+                src="{% if banner_config.banner_home %}{{ banner_config.banner_home.url }}{% else %}{% static 'img/banners/banner_home_qiuxuetang.png' %}{% endif %}"
+                alt="球学堂 — 雪球人儿自己的在线课堂"
+                class="h-auto w-full object-cover object-center"
+                width="1280"
+                height="360"
+                loading="eager"
+                decoding="async"
+            >
+        </div>
+    </section>
+
+    {% if user.is_authenticated and trainings_featured %}
+    <section class="space-y-4" aria-label="培训推荐">
+        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2">
+            <h2 class="text-lg font-bold text-slate-900">培训推荐</h2>
+            <a href="{% url 'shop:activity_center' %}" class="shrink-0 text-sm font-medium text-sky-600 hover:underline">活动广场</a>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {% for t in trainings_featured %}
+            <a href="{% url 'shop:training_detail' t.pk %}" class="group block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md">
+                <div class="relative aspect-[16/9] bg-gradient-to-br from-sky-100 to-indigo-100">
+                    {% if t.cover %}
+                    <img src="{{ t.cover.url }}" alt="" class="absolute inset-0 h-full w-full object-cover">
+                    {% else %}
+                    <div class="flex h-full w-full items-center justify-center text-4xl text-sky-500/40" aria-hidden="true">📋</div>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <h3 class="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-sky-700">{{ t.title }}</h3>
+                    <p class="mt-2 text-xs text-slate-500">
+                        {% if t.instructor_name %}讲师 {{ t.instructor_name|truncatechars:12 }} · {% endif %}
+                        {% if t.start_at %}{{ t.start_at|date:"Y-m-d H:i" }} 开始{% elif t.schedule_note %}{{ t.schedule_note|truncatechars:28 }}{% else %}时间见详情{% endif %}
+                        {% if t.location %} · {{ t.location|truncatechars:16 }}{% endif %}
+                    </p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {# 课程：左侧目录（与在线课堂一致）+ 推荐 / 最热 / 最新 Tab #}
+    <section class="space-y-4" id="courses-section">
+        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2">
+            <h2 class="text-lg font-bold text-slate-900">课程</h2>
+            {% if user.is_authenticated %}
+            <a href="{% url 'courses:course_catalog' %}" class="shrink-0 text-sm font-medium text-sky-600 hover:underline">全部课程</a>
+            {% else %}
+            <a href="{% url 'users:login' %}?next={% url 'courses:course_catalog' %}" class="shrink-0 text-sm font-medium text-sky-600 hover:underline">登录后查看全部课程</a>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <aside class="w-full shrink-0 lg:max-w-[15rem]">
+                {% include "partials/course_category_nav.html" %}
+            </aside>
+            <div class="min-w-0 flex-1 space-y-4">
+        <div class="flex flex-wrap gap-1 border-b border-slate-100 sm:gap-4" role="tablist" id="home-course-tabs">
+                <button type="button" role="tab" aria-selected="true" data-tab="rec"
+                    class="home-tab border-b-2 border-sky-600 px-2 py-2 text-sm font-semibold text-sky-700 sm:px-0">推荐课程</button>
+                <button type="button" role="tab" aria-selected="false" data-tab="hot"
+                    class="home-tab border-b-2 border-transparent px-2 py-2 text-sm font-medium text-slate-600 hover:text-sky-600 sm:px-0">最热课程</button>
+                <button type="button" role="tab" aria-selected="false" data-tab="new"
+                    class="home-tab border-b-2 border-transparent px-2 py-2 text-sm font-medium text-slate-600 hover:text-sky-600 sm:px-0">最新课程</button>
+            </div>
+
+        <div id="panel-rec" class="home-tab-panel grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {% for course in courses_recommended|slice:":4" %}
+                {% include "partials/course_card.html" with course=course only %}
+            {% empty %}
+                <p class="col-span-full py-10 text-center text-sm text-slate-400">暂无课程，请在后台添加并勾选「是否推荐」。</p>
+            {% endfor %}
+        </div>
+        <div id="panel-hot" class="home-tab-panel hidden grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {% for course in courses_hottest|slice:":4" %}
+                {% include "partials/course_card.html" with course=course only %}
+            {% empty %}
+                <p class="col-span-full py-10 text-center text-sm text-slate-400">暂无课程</p>
+            {% endfor %}
+        </div>
+        <div id="panel-new" class="home-tab-panel hidden grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {% for course in courses_latest|slice:":4" %}
+                {% include "partials/course_card.html" with course=course only %}
+            {% empty %}
+                <p class="col-span-full py-10 text-center text-sm text-slate-400">暂无课程</p>
+            {% endfor %}
+        </div>
+            </div>
+        </div>
+    </section>
+
+    {% if user.is_authenticated %}
+    <section class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-slate-900">专业讲师</h2>
+        </div>
+        {% if instructors %}
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {% for ins in instructors %}
+                <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    {% if ins.display_avatar_url %}
+                    <img src="{{ ins.display_avatar_url }}" alt="" class="h-14 w-14 shrink-0 rounded-full object-cover">
+                    {% else %}
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 text-lg font-bold text-slate-700">
+                        {{ ins.name|slice:":1" }}
+                    </div>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <p class="truncate font-medium text-slate-800">{{ ins.name }}</p>
+                        <p class="truncate text-xs text-slate-500">{{ ins.title|default:"讲师" }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-10 text-center text-sm text-slate-400">管理员可在后台「课程 → 讲师」中添加</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {# 榜单排名：积分榜双列（仅登录用户） #}
+    {% if user.is_authenticated %}
+    <section id="leaderboard" class="space-y-4 scroll-mt-24">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-lg font-bold text-slate-900">榜单排名</h2>
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>积分榜</span>
+                <span class="rounded border border-slate-200 bg-white px-2 py-1">{{ leaderboard_settings.time_range_label }}</span>
+                {% if leaderboard_settings.display_footnote %}
+                <span class="text-slate-400">{{ leaderboard_settings.display_footnote }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="grid gap-6 md:grid-cols-2">
+            <ul class="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {% for emp in leaderboard_first %}
+                    <li class="flex items-center gap-3 text-sm">
+                        <span class="flex w-7 shrink-0 justify-center font-semibold {% if forloop.counter == 1 %}text-amber-500{% elif forloop.counter == 2 %}text-slate-400{% elif forloop.counter == 3 %}text-amber-700{% else %}text-slate-400{% endif %}">{{ forloop.counter }}</span>
+                        {% if emp.avatar %}
+                        <img src="{{ emp.avatar.url }}" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-full object-cover">
+                        {% else %}
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">{{ emp.real_name|slice:":1" }}</div>
+                        {% endif %}
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium text-slate-800">{{ emp.real_name }}</p>
+                            <p class="truncate text-xs text-slate-500">{{ emp.dept_level_2|default:emp.dept_level_1|default:"—" }}</p>
+                        </div>
+                        <span class="shrink-0 text-xs font-semibold text-sky-600">{{ emp.points_balance }} 积分</span>
+                    </li>
+                {% empty %}
+                    <li class="py-8 text-center text-sm text-slate-400">暂无排行数据</li>
+                {% endfor %}
+            </ul>
+            <ul class="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {% for emp in leaderboard_second %}
+                    <li class="flex items-center gap-3 text-sm">
+                        <span class="flex w-7 shrink-0 justify-center font-semibold text-slate-400">{{ leaderboard_split_at|add:forloop.counter }}</span>
+                        {% if emp.avatar %}
+                        <img src="{{ emp.avatar.url }}" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-full object-cover">
+                        {% else %}
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">{{ emp.real_name|slice:":1" }}</div>
+                        {% endif %}
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium text-slate-800">{{ emp.real_name }}</p>
+                            <p class="truncate text-xs text-slate-500">{{ emp.dept_level_2|default:emp.dept_level_1|default:"—" }}</p>
+                        </div>
+                        <span class="shrink-0 text-xs font-semibold text-sky-600">{{ emp.points_balance }} 积分</span>
+                    </li>
+                {% empty %}
+                    <li class="py-8 text-center text-sm text-slate-400">暂无更多排名数据</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+    {% endif %}
+
+    <footer class="border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
+        <p class="space-x-4">
+            <a href="{% url 'home' %}" class="hover:text-slate-600">网站首页</a>
+            <a href="#" class="hover:text-slate-600">用户中心</a>
+            <a href="#" class="hover:text-slate-600">建议反馈</a>
+        </p>
+        <p class="mt-2">© {% now "Y" %} 球学堂 · 企业内部学习平台</p>
+    </footer>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var tabs = document.querySelectorAll("#home-course-tabs .home-tab");
+  var panels = {
+    rec: document.getElementById("panel-rec"),
+    hot: document.getElementById("panel-hot"),
+    new: document.getElementById("panel-new")
+  };
+  function activate(name) {
+    Object.keys(panels).forEach(function (key) {
+      if (!panels[key]) return;
+      panels[key].classList.toggle("hidden", key !== name);
+    });
+    tabs.forEach(function (btn) {
+      var on = btn.getAttribute("data-tab") === name;
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+      btn.classList.toggle("border-sky-600", on);
+      btn.classList.toggle("font-semibold", on);
+      btn.classList.toggle("text-sky-700", on);
+      btn.classList.toggle("border-transparent", !on);
+      btn.classList.toggle("font-medium", !on);
+      btn.classList.toggle("text-slate-600", !on);
+    });
+  }
+  tabs.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      activate(btn.getAttribute("data-tab"));
+    });
+  });
+})();
+</script>
+{% endblock %}

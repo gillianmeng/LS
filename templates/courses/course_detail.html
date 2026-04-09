@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }} — 球学堂{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-4xl space-y-6">
+    <nav class="text-sm text-slate-500" aria-label="面包屑">
+        <a href="{% url 'home' %}" class="hover:text-sky-600">首页</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-800">{{ course.name }}</span>
+    </nav>
+
+    <header class="space-y-2">
+        <h1 class="text-2xl font-bold text-slate-900">{{ course.name }}</h1>
+        <p class="flex flex-wrap gap-3 text-sm text-slate-500">
+            <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{% if course.content_kind == "article" %}文章{% else %}视频{% endif %}</span>
+            <span>{% if course.course_type == "required" %}必修{% else %}选修{% endif %}</span>
+            <span>{{ course.duration_display }}</span>
+            <span>{{ course.view_count }} 次浏览</span>
+            {% if course.reward_points %}<span>完成可得 {{ course.reward_points }} 积分</span>{% endif %}
+        </p>
+        {% if user.is_authenticated and learning_record %}
+        <p class="text-sm text-sky-700">
+            学习进度 {{ learning_record.progress_percentage }}%
+            {% if learning_record.is_completed %}· 已完课{% endif %}
+        </p>
+        {% elif not user.is_authenticated %}
+        <p class="text-sm text-slate-600"><a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="font-medium text-sky-600 hover:underline">登录</a> 后可记录学习进度。</p>
+        {% endif %}
+    </header>
+
+    {% if course.content_kind == "article" %}
+        {% if course.thumbnail or course.cover_url %}
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+            {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="" class="max-h-80 w-full object-cover object-center">
+            {% else %}
+            <img src="{{ course.cover_url }}" alt="" class="max-h-80 w-full object-cover object-center">
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if course.article_url %}
+        <section class="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-6 shadow-sm">
+            <h2 class="text-base font-semibold text-slate-900">阅读原文</h2>
+            <p class="mt-1 text-sm text-slate-600">在新标签页打开下方链接，可保留飞书、语雀、公司文档站等<strong>原有格式与排版</strong>（无需把全文粘贴进本站）。</p>
+            <a href="{{ course.article_url }}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+                打开全文
+                <span aria-hidden="true" class="text-base">↗</span>
+            </a>
+            <p class="mt-3 break-all text-xs text-slate-400">{{ course.article_url }}</p>
+        </section>
+        {% endif %}
+
+        {% if course.article_body %}
+        <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="mb-4 text-base font-semibold text-slate-900">{% if course.article_url %}站内补充 / 摘要{% else %}正文{% endif %}</h2>
+            <div class="prose prose-slate max-w-none text-slate-800 prose-p:leading-relaxed whitespace-pre-wrap">{{ course.article_body }}</div>
+        </article>
+        {% elif not course.article_url and course.description %}
+        <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="mb-2 text-base font-semibold text-slate-900">正文</h2>
+            <div class="prose prose-slate max-w-none text-slate-800 whitespace-pre-wrap">{{ course.description }}</div>
+        </article>
+        {% elif not course.article_url and not course.article_body and not course.description %}
+        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
+            请管理员在后台填写<strong>原文链接</strong>或<strong>文章正文</strong>，或填写简介
+        </div>
+        {% endif %}
+
+        {% if course.description and course.article_url or course.description and course.article_body %}
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-2 text-base font-semibold text-slate-900">简介</h2>
+            <div class="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">{{ course.description }}</div>
+        </section>
+        {% endif %}
+    {% else %}
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm">
+        {% if youtube_embed_url %}
+        <div class="aspect-video w-full">
+            <iframe class="h-full w-full" src="{{ youtube_embed_url }}" title="视频播放"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+        </div>
+        {% elif course.video_file %}
+        <div>
+            {# OSS：服务端生成短时签名 URL（默认 8h）；本地存储：仍为 /media/... #}
+            <video id="course-main-video" class="aspect-video w-full" controls playsinline preload="metadata" src="{{ course_video_src }}">
+                您的浏览器不支持视频播放。
+            </video>
+            {% include "partials/video_speed_bar.html" %}
+        </div>
+        {% elif course.video_url %}
+        <div>
+            <div class="aspect-video w-full">
+                <video id="course-main-video" class="h-full w-full" controls playsinline preload="metadata" src="{{ course.video_url }}">
+                    您的浏览器不支持视频播放。
+                </video>
+            </div>
+            {% include "partials/video_speed_bar.html" %}
+        </div>
+        {% else %}
+        <div class="flex aspect-video w-full items-center justify-center bg-slate-900/90 text-sm text-slate-300">
+            管理员尚未上传视频或填写视频链接
+        </div>
+        {% endif %}
+    </div>
+
+    {% if course.description %}
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-2 text-base font-semibold text-slate-900">课程简介</h2>
+        <div class="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">{{ course.description }}</div>
+    </section>
+    {% endif %}
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-sm ring-1 ring-emerald-100/60" aria-label="学习完成">
+        {% if learning_record and learning_record.is_completed %}
+        <p class="text-sm font-medium text-emerald-900">已记录：您已学完本课。{% if course.reward_points %}本课设置完成奖励 {{ course.reward_points }} 分（首次完成时已按积分规则发放）。{% endif %}</p>
+        {% else %}
+        <form id="course-complete-form" method="post" action="{% url 'courses:course_mark_complete' course.pk %}" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {% csrf_token %}
+            <p class="text-sm text-emerald-900">学完以上内容后，可点击按钮记录进度；系统将按积分商城规则发放积分（详见 <a href="{% url 'shop:points_mall' %}#points-rules" class="font-medium text-sky-700 underline decoration-sky-300 hover:text-sky-800">积分规则</a>）。视频课在播放到结尾时会自动尝试记录一次。</p>
+            <button type="submit" class="shrink-0 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">标记为已学完</button>
+        </form>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <p class="text-center">
+        <a href="{% url 'home' %}#courses-section" class="text-sm text-sky-600 hover:underline">← 返回首页课程</a>
+    </p>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+    var MAX_RATE = 3;
+    var MIN_RATE = 0.25;
+    var v = document.getElementById('course-main-video');
+    var sel = document.getElementById('course-video-speed');
+    if (!v || !sel) return;
+
+    function syncSelectToRate() {
+        var r = v.playbackRate;
+        var opts = sel.options;
+        var best = 0;
+        var bestDiff = Infinity;
+        for (var i = 0; i < opts.length; i++) {
+            var val = parseFloat(opts[i].value);
+            var d = Math.abs(val - r);
+            if (d < bestDiff) { bestDiff = d; best = i; }
+        }
+        if (bestDiff < 0.01) sel.selectedIndex = best;
+    }
+
+    sel.addEventListener('change', function () {
+        v.playbackRate = parseFloat(sel.value);
+    });
+
+    v.addEventListener('ratechange', function () {
+        if (v.playbackRate > MAX_RATE) v.playbackRate = MAX_RATE;
+        else if (v.playbackRate < MIN_RATE) v.playbackRate = MIN_RATE;
+        syncSelectToRate();
+    });
+})();
+{% if user.is_authenticated and course.content_kind != "article" %}
+(function () {
+    var v = document.getElementById('course-main-video');
+    if (!v) return;
+    var canAuto = {% if not learning_record or not learning_record.is_completed %}true{% else %}false{% endif %};
+    if (!canAuto) return;
+    var markUrl = '{% url "courses:course_mark_complete" course.pk %}';
+    var submitted = false;
+    v.addEventListener('ended', function () {
+        if (submitted) return;
+        submitted = true;
+        var form = document.getElementById('course-complete-form');
+        if (!form) return;
+        var tok = form.querySelector('input[name=csrfmiddlewaretoken]');
+        if (!tok) return;
+        var f = document.createElement('form');
+        f.method = 'POST';
+        f.action = markUrl;
+        var h = document.createElement('input');
+        h.type = 'hidden';
+        h.name = 'csrfmiddlewaretoken';
+        h.value = tok.value;
+        f.appendChild(h);
+        document.body.appendChild(f);
+        f.submit();
+    });
+})();
+{% endif %}
+</script>
+{% endblock %}

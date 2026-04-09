@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}测练中心 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-7xl space-y-4 pb-16 -mx-4 -mt-8 px-4 pt-6">
+    <h1 class="text-2xl font-bold text-slate-800">测练中心</h1>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
+            <nav class="flex gap-8 border-b border-slate-100 pb-3 sm:border-0 sm:pb-0" aria-label="测练类型">
+                <a
+                    href="{% url 'courses:my_exams' %}?mode=exam&pass_status={{ pass_status|urlencode }}&pending={{ pending_filter|urlencode }}&q={{ search_q|urlencode }}&sort={{ sort_key }}"
+                    class="inline-block border-b-2 pb-2 text-sm font-medium {% if exam_mode == 'exam' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-500 hover:text-sky-600{% endif %}"
+                >考试</a>
+                <a
+                    href="{% url 'courses:my_exams' %}?mode=practice&pass_status={{ pass_status|urlencode }}&pending={{ pending_filter|urlencode }}&q={{ search_q|urlencode }}&sort={{ sort_key }}"
+                    class="inline-block border-b-2 pb-2 text-sm font-medium {% if exam_mode == 'practice' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-500 hover:text-sky-600{% endif %}"
+                >练习</a>
+            </nav>
+
+            <form method="get" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="mode" value="{{ exam_mode }}">
+                <input type="hidden" name="sort" value="{{ sort_key }}">
+                <label class="relative">
+                    <span class="sr-only">通过状态</span>
+                    <select name="pass_status" class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700">
+                        <option value="">通过状态</option>
+                        <option value="passed" {% if pass_status == 'passed' %}selected{% endif %}>已通过</option>
+                        <option value="failed" {% if pass_status == 'failed' %}selected{% endif %}>未通过</option>
+                        <option value="none" {% if pass_status == 'none' %}selected{% endif %}>暂无结果</option>
+                    </select>
+                    <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">▾</span>
+                </label>
+                <label class="relative">
+                    <span class="sr-only">待考试</span>
+                    <select name="pending" class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700">
+                        <option value="">待考试</option>
+                        <option value="pending" {% if pending_filter == 'pending' %}selected{% endif %}>待参加</option>
+                        <option value="ongoing" {% if pending_filter == 'ongoing' %}selected{% endif %}>进行中</option>
+                        <option value="done" {% if pending_filter == 'done' %}selected{% endif %}>已结束</option>
+                    </select>
+                    <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">▾</span>
+                </label>
+                <div class="relative min-w-[200px] flex-1 sm:max-w-xs">
+                    <input type="search" name="q" value="{{ search_q }}" placeholder="请输入考试名称搜索" class="w-full rounded-lg border border-slate-200 py-2 pl-3 pr-10 text-sm placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                    <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-sky-600" aria-label="搜索">🔍</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-4 py-3 text-sm sm:px-5">
+            <span class="text-slate-600">排序方式：</span>
+            <a href="{% url 'courses:my_exams' %}?mode={{ exam_mode }}&pass_status={{ pass_status|urlencode }}&pending={{ pending_filter|urlencode }}&q={{ search_q|urlencode }}&sort=default" class="{% if sort_key == 'default' %}font-medium text-sky-600{% else %}text-slate-500 hover:text-sky-600{% endif %}">默认排序</a>
+            <a href="{% url 'courses:my_exams' %}?mode={{ exam_mode }}&pass_status={{ pass_status|urlencode }}&pending={{ pending_filter|urlencode }}&q={{ search_q|urlencode }}&sort=start" class="inline-flex items-center gap-0.5 {% if sort_key == 'start' %}font-medium text-sky-600{% else %}text-slate-500 hover:text-sky-600{% endif %}">开始时间 <span class="text-xs">▼</span></a>
+            <a href="{% url 'courses:my_exams' %}?mode={{ exam_mode }}&pass_status={{ pass_status|urlencode }}&pending={{ pending_filter|urlencode }}&q={{ search_q|urlencode }}&sort=end" class="inline-flex items-center gap-0.5 {% if sort_key == 'end' %}font-medium text-sky-600{% else %}text-slate-500 hover:text-sky-600{% endif %}">结束时间 <span class="text-xs">▼</span></a>
+        </div>
+
+        {% if exam_rows %}
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead class="border-b border-slate-100 bg-slate-50/80 text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <tr>
+                        <th class="px-4 py-3 sm:px-5">名称</th>
+                        <th class="px-4 py-3 sm:px-5">时间</th>
+                        <th class="px-4 py-3 sm:px-5">状态</th>
+                        <th class="px-4 py-3 sm:px-5">我的成绩</th>
+                        <th class="px-4 py-3 sm:px-5 w-28">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for row in exam_rows %}
+                    {% with e=row.exam %}
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="px-4 py-3.5 align-top sm:px-5">
+                            <span class="font-medium text-slate-800">{{ e.title }}</span>
+                            {% if e.description %}<p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ e.description }}</p>{% endif %}
+                        </td>
+                        <td class="px-4 py-3.5 align-top text-slate-600 sm:px-5 whitespace-nowrap">
+                            {% if e.starts_at or e.ends_at %}
+                                {% if e.starts_at %}<span class="block">{{ e.starts_at|date:"Y-m-d H:i" }} 起</span>{% endif %}
+                                {% if e.ends_at %}<span class="block">{% if e.starts_at %}至 {% endif %}{{ e.ends_at|date:"Y-m-d H:i" }}</span>{% endif %}
+                            {% else %}
+                                <span class="text-slate-400">不限开放时间</span>
+                            {% endif %}
+                            {% if e.duration_minutes %}
+                            <span class="mt-1 block text-xs text-slate-500">单次作答限时 {{ e.duration_minutes }} 分钟</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3.5 align-top sm:px-5">
+                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">{{ row.schedule_label }}</span>
+                        </td>
+                        <td class="px-4 py-3.5 align-top text-slate-700 sm:px-5">{{ row.result_summary }}</td>
+                        <td class="px-4 py-3.5 align-top sm:px-5">
+                            {% if e.entry_url %}
+                            <a href="{{ e.entry_url }}" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline">进入</a>
+                            {% else %}
+                            <span class="text-slate-400">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="flex min-h-[320px] flex-col items-center justify-center bg-slate-50/50 px-4 py-16">
+            <div class="text-sky-200" aria-hidden="true">
+                <svg class="mx-auto h-40 w-40" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="100" cy="170" rx="60" ry="12" fill="#E2E8F0"/>
+                    <rect x="55" y="115" width="50" height="40" rx="6" fill="#CBD5E1"/>
+                    <circle cx="95" cy="75" r="28" fill="#93C5FD"/>
+                    <path d="M85 95 L105 95 L100 120 L90 120 Z" fill="#60A5FA"/>
+                    <rect x="118" y="100" width="32" height="24" rx="3" fill="#F1F5F9" stroke="#CBD5E1"/>
+                    <rect x="122" y="104" width="24" height="3" rx="1" fill="#E2E8F0"/>
+                    <rect x="122" y="110" width="16" height="2" rx="1" fill="#E2E8F0"/>
+                </svg>
+            </div>
+            <p class="mt-4 text-sm text-slate-500">暂无数据</p>
+            <p class="mt-1 max-w-sm text-center text-xs text-slate-400">管理员可在后台「课程与考试 → 考试与练习」中发布；成绩在「考试成绩」中录入。</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <p class="text-center text-xs text-slate-400">
+        <a href="{% url 'courses:my_learning' %}" class="text-sky-600 hover:underline">返回我的学习</a>
+    </p>
+
+</div>
+{% endblock %}

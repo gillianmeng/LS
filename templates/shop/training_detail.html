@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ training.title }} — 培训 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-6 pb-16 pt-2">
+    <nav class="text-xs text-slate-500">
+        <a href="{% url 'shop:activity_center' %}" class="text-sky-600 hover:underline">活动广场</a>
+        <span class="mx-1.5 text-slate-300">/</span>
+        <span class="text-slate-600">培训</span>
+    </nav>
+
+    <article class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        {% if training.cover %}
+        <div class="aspect-[21/9] w-full bg-slate-100">
+            <img src="{{ training.cover.url }}" alt="" class="h-full w-full object-cover object-center">
+        </div>
+        {% endif %}
+        <div class="p-5 sm:p-6">
+            <div class="flex flex-wrap items-center gap-2">
+                {% with s=training.schedule_status %}
+                <span class="rounded-full px-2.5 py-0.5 text-xs font-medium
+                    {% if s == 'flexible' %}bg-violet-100 text-violet-800
+                    {% elif s == 'not_started' %}bg-slate-100 text-slate-700
+                    {% elif s == 'ongoing' %}bg-emerald-100 text-emerald-800
+                    {% else %}bg-slate-200 text-slate-600{% endif %}">
+                    {% if s == 'flexible' %}时间灵活/待定{% elif s == 'not_started' %}未开始{% elif s == 'ongoing' %}进行中{% else %}已结束{% endif %}
+                </span>
+                {% endwith %}
+            </div>
+            <h1 class="mt-3 text-xl font-bold text-slate-900 sm:text-2xl">{{ training.title }}</h1>
+            {% if training.summary %}
+            <p class="mt-2 text-sm text-slate-600">{{ training.summary }}</p>
+            {% endif %}
+
+            {% if training.promotional_url %}
+            <div class="mt-5 rounded-xl border border-violet-100 bg-violet-50/70 px-4 py-3 sm:px-5">
+                <p class="text-sm font-semibold text-slate-800">活动与宣传</p>
+                <p class="mt-1 text-xs text-slate-600">点击下方可在新窗口打开飞书文档、介绍页等（与报名入口无关）。</p>
+                <a href="{{ training.promotional_url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center justify-center rounded-lg border border-violet-200 bg-white px-4 py-2 text-sm font-medium text-violet-800 shadow-sm transition hover:bg-violet-50">
+                    {% if training.promotional_link_label %}{{ training.promotional_link_label }}{% else %}查看活动资料{% endif %}
+                </a>
+            </div>
+            {% endif %}
+
+            <dl class="mt-6 space-y-2 border-t border-slate-100 pt-4 text-sm">
+                {% if training.instructor_name %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">讲师</dt>
+                    <dd class="text-slate-800">{{ training.instructor_name }}</dd>
+                </div>
+                {% endif %}
+                {% if training.start_at or training.end_at %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">时间</dt>
+                    <dd class="text-slate-800">
+                        {% if training.start_at %}{{ training.start_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}
+                        {% if training.end_at %} — {{ training.end_at|date:"Y-m-d H:i" }}{% elif training.start_at %}<span class="text-slate-500">（未填结束时间）</span>{% endif %}
+                    </dd>
+                </div>
+                {% endif %}
+                {% if training.schedule_note %}
+                <div class="flex flex-wrap gap-x-2 align-top">
+                    <dt class="shrink-0 text-slate-500">时间安排</dt>
+                    <dd class="whitespace-pre-wrap text-slate-800">{{ training.schedule_note }}</dd>
+                </div>
+                {% endif %}
+                {% if training.registration_deadline %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">报名截止</dt>
+                    <dd class="text-slate-800">{{ training.registration_deadline|date:"Y-m-d H:i" }}</dd>
+                </div>
+                {% endif %}
+                {% if training.location %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">地点</dt>
+                    <dd class="text-slate-800">{{ training.location }}</dd>
+                </div>
+                {% endif %}
+                {% if training.online_meeting_url %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">线上</dt>
+                    <dd><a href="{{ training.online_meeting_url }}" class="text-sky-600 hover:underline" target="_blank" rel="noopener noreferrer">打开链接</a></dd>
+                </div>
+                {% endif %}
+                {% if training.max_participants %}
+                <div class="flex flex-wrap gap-x-2">
+                    <dt class="text-slate-500">名额</dt>
+                    <dd class="text-slate-800">上限 {{ training.max_participants }} 人（已报 {{ training.occupied_slots }}）</dd>
+                </div>
+                {% endif %}
+            </dl>
+
+            {% if training.description %}
+            <div class="prose prose-sm mt-6 max-w-none border-t border-slate-100 pt-4 text-slate-700">
+                {{ training.description|linebreaks }}
+            </div>
+            {% endif %}
+
+            {% if training.registration_external_url %}
+            <div class="mt-6 rounded-xl border border-sky-100 bg-sky-50/80 px-4 py-4 sm:px-5">
+                <p class="text-sm font-semibold text-slate-800">外链报名</p>
+                <p class="mt-1 text-xs text-slate-600">请点击下方按钮，在飞书 / 表单等外部页面完成报名（与站内报名可并行，请以组织要求为准）。</p>
+                <a href="{{ training.registration_external_url }}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700">前往外链报名</a>
+            </div>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                {% if my_registration %}
+                <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                    <p class="font-medium text-slate-800">我的报名：{% if my_registration.status == 'pending' %}审核中{% else %}{{ my_registration.get_status_display }}{% endif %}</p>
+                    {% if my_registration.message %}
+                    <p class="mt-1 text-slate-600">留言：{{ my_registration.message }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if training.registration_is_open %}
+                    {% if training.has_capacity %}
+                        {% if not my_registration or my_registration.status == 'rejected' or my_registration.status == 'cancelled' %}
+                        <form method="post" action="{% url 'shop:training_register' training.pk %}" class="mt-6 space-y-3 border-t border-slate-100 pt-6">
+                            {% csrf_token %}
+                            {% if training.registration_external_url %}
+                            <p class="text-sm font-medium text-slate-800">站内报名</p>
+                            <p class="text-xs text-slate-500">亦可仅使用上方外链；若需在学习平台留记录，可在此提交。</p>
+                            {% endif %}
+                            <label class="block text-sm font-medium text-slate-700">报名留言（选填）</label>
+                            <textarea name="message" rows="2" maxlength="300" placeholder="如部门、备注需求等"
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"></textarea>
+                            <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700">
+                                {% if my_registration %}重新提交报名{% else %}立即报名{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                    {% else %}
+                    <p class="mt-6 text-sm text-amber-800">报名名额已满。</p>
+                    {% endif %}
+                {% else %}
+                <p class="mt-6 text-sm text-slate-500">当前不可报名。</p>
+                {% endif %}
+            {% else %}
+            <p class="mt-6 text-sm text-slate-500">
+                <a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="font-medium text-sky-600 hover:underline">登录</a>后报名
+            </p>
+            {% endif %}
+        </div>
+    </article>
+</div>
+{% endblock %}

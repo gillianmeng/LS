@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{% if search_q %}「{{ search_q }}」搜索结果{% else %}搜索{% endif %} — 球学堂{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-4xl space-y-8">
+    <form action="{% url 'search' %}" method="get" class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label class="sr-only" for="q">关键词</label>
+        <div class="relative flex-1">
+            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">🔍</span>
+            <input type="search" name="q" id="q" value="{{ search_q }}" placeholder="搜索课程、积分商品…"
+                class="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                autofocus>
+        </div>
+        <button type="submit" class="rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-700">搜索</button>
+    </form>
+
+    {% if search_q %}
+    <div class="space-y-6">
+        <section aria-labelledby="sec-courses">
+            <h2 id="sec-courses" class="mb-3 text-base font-bold text-slate-900">课程 <span class="text-sm font-normal text-slate-500">({{ search_courses|length }})</span></h2>
+            {% if search_courses %}
+            <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm">
+                {% for c in search_courses %}
+                <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                    <a href="{% url 'courses:course_detail' c.pk %}" class="font-medium text-slate-800 hover:text-sky-700">{{ c.name }}</a>
+                    <span class="flex flex-wrap gap-2 text-sm">
+                        <a href="{% url 'courses:course_detail' c.pk %}" class="text-sky-600 hover:underline">查看课程</a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'courses:my_courses' %}?q={{ c.name|urlencode }}" class="text-slate-500 hover:text-sky-600 hover:underline">我的课程</a>
+                        {% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-slate-500">没有匹配的课程。</p>
+            {% endif %}
+        </section>
+
+        <section aria-labelledby="sec-products">
+            <h2 id="sec-products" class="mb-3 text-base font-bold text-slate-900">积分商品 <span class="text-sm font-normal text-slate-500">({{ search_products|length }})</span></h2>
+            {% if search_products %}
+            <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm">
+                {% for p in search_products %}
+                <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                    <span class="font-medium text-slate-800">{{ p.name }}</span>
+                    <a href="{% url 'shop:points_mall' %}?q={{ p.name|urlencode }}" class="text-sm text-sky-600 hover:underline">去积分商城</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-slate-500">没有匹配的商品。</p>
+            {% endif %}
+        </section>
+    </div>
+    {% else %}
+    <p class="text-center text-sm text-slate-500">输入关键词搜索课程与积分商品。</p>
+    {% endif %}
+</div>
+{% endblock %}

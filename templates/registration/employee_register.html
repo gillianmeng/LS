@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}员工注册 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-slate-100{% endblock %}
+{% block content %}
+<div class="mx-auto flex max-w-md flex-col rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <h1 class="text-center text-xl font-bold text-slate-900">员工注册</h1>
+    <p class="mt-1 text-center text-sm text-slate-500">注册后可使用「我的学习」等前台功能</p>
+
+    <form method="post" class="mt-6 space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-slate-700">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="w-full rounded-lg bg-sky-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">注册并登录</button>
+    </form>
+    <p class="mt-4 text-center text-sm text-slate-500">
+        已有账号？<a href="{% url 'users:login' %}" class="font-medium text-sky-600 hover:underline">去登录</a>
+    </p>
+    <p class="mt-2 text-center text-xs text-slate-400">
+        需管理后台权限？<a href="{% url 'users:register_staff' %}" class="text-slate-500 hover:text-sky-600">使用邀请码注册管理员</a>
+    </p>
+</div>
+{% endblock %}

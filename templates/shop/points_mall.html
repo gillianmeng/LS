@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}积分商城 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div id="top" class="space-y-4 pb-16 -mx-4 -mt-8 px-4 pt-6 scroll-mt-0 sm:space-y-5">
+    {# 左：Banner + 积分规则；右：仅用户区（头像/积分/订单入口）。Grid 等高对齐。 #}
+    <div class="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,30%)] lg:items-stretch">
+        <div class="order-1 flex h-full min-h-0 min-w-0 flex-col gap-4">
+            <div class="shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm">
+                <div class="relative aspect-[10/3] w-full">
+                    <img
+                        src="{% if banner_config.banner_points_mall %}{{ banner_config.banner_points_mall.url }}{% else %}{% static 'img/banners/points_mall_banner.png' %}{% endif %}"
+                        alt="积分换好礼：积分获取及兑换规则、礼品领取时间及方式"
+                        class="absolute inset-0 h-full w-full object-cover object-center"
+                        width="1200"
+                        height="360"
+                        loading="eager"
+                        decoding="async"
+                    >
+                </div>
+            </div>
+            {# 积分规则：上三卡 + 其余行正文 + 底栏提示，避免侧栏等高时大块留白 #}
+            <section id="points-rules" class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/80">
+                <div class="shrink-0 border-b border-slate-100 px-3 py-2.5 sm:px-4">
+                    <div class="flex flex-wrap items-end justify-between gap-2">
+                        <h2 class="text-sm font-semibold tracking-tight text-orange-600">积分规则</h2>
+                        <span class="text-[11px] text-slate-400">获取 · 上限 · 兑换</span>
+                    </div>
+                </div>
+                <div class="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-white via-orange-50/[0.07] to-orange-50/25">
+                    {% if points_earn_rule_lines %}
+                    <div class="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
+                        {# 前 3 条：规则卡片 #}
+                        <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+                            {% for line in points_earn_rule_lines %}
+                            {% if forloop.counter <= 3 %}
+                            <div class="flex min-h-[5.5rem] flex-col rounded-xl border border-orange-100/90 bg-gradient-to-b from-orange-50/90 to-white p-3 shadow-sm ring-1 ring-orange-100/50">
+                                <span class="text-[10px] font-bold uppercase tracking-wide text-orange-600">规则 {{ forloop.counter }}</span>
+                                <p class="mt-2 text-[11px] font-medium leading-relaxed text-slate-800">{{ line }}</p>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {# 第 4 行起：完整展示，填满中部区域 #}
+                        {% if points_earn_rule_lines|length > 3 %}
+                        <div class="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white p-3 sm:p-4">
+                            <p class="text-[11px] font-semibold text-slate-700">更多说明</p>
+                            <ul class="mt-2.5 space-y-2 border-l-2 border-orange-200/80 pl-3">
+                                {% for line in points_earn_rule_lines %}
+                                {% if forloop.counter > 3 %}
+                                <li class="text-[11px] leading-relaxed text-slate-700">{{ line }}</li>
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {# 底栏：短文 + 三列铺满；配色与正文一致（深灰/黑） #}
+                    <div class="mt-auto border-t border-slate-200 bg-slate-50/90 px-2.5 py-2 sm:px-3">
+                        <p class="mb-1.5 text-[11px] font-semibold text-slate-900">使用提示</p>
+                        <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-3 sm:gap-2">
+                            <div class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-800 shadow-sm">
+                                <span class="font-semibold text-slate-900">兑换</span> · 在下方「积分商品」选品下单
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-800 shadow-sm">
+                                <span class="font-semibold text-slate-900">订单</span> · 右侧「我的订单」查进度
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-800 shadow-sm">
+                                <span class="font-semibold text-slate-900">说明</span> · 扣减与规则以本页及后台为准
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-1 flex-col justify-center p-6">
+                        <p class="text-center text-xs text-slate-500">暂无规则说明，请在后台「积分商城：规则与说明」中配置。</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        <aside class="order-2 flex h-full min-h-0 w-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            {% if user.is_authenticated %}
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="" width="48" height="48" class="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-slate-100">
+                    {% else %}
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg font-bold text-sky-700" aria-hidden="true">
+                        {{ user.real_name|slice:":1" }}
+                    </div>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <p class="truncate font-semibold text-slate-900">{{ user.real_name }}</p>
+                        <p class="text-xs text-slate-500">工号 {{ user.emp_id }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
+                    <p class="text-xs text-slate-600">我的可用积分</p>
+                    <p class="text-2xl font-bold tabular-nums text-orange-600">{{ user.points_balance }}</p>
+                </div>
+            {% else %}
+                <p class="text-sm text-slate-600">登录后查看可用积分与订单。</p>
+                <a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="mt-2 inline-block text-sm text-sky-600 hover:underline">员工登录</a>
+            {% endif %}
+
+            {# 购物服务：窄图标在左，文案在右（与「我的学习」同系渐变 + SVG） #}
+            {% url 'shop:my_orders' as shop_orders_url %}
+            {% url 'shop:mall_cart' as mall_cart_url %}
+            {% url 'shop:mall_addresses' as mall_addresses_url %}
+            {% url 'shop:mall_after_sales' as mall_after_sales_url %}
+            <section class="mt-5 border-t border-slate-100 pt-4" aria-label="购物服务">
+                <div class="mb-2.5 flex items-center justify-between gap-2 px-0.5">
+                    <h2 class="text-sm font-bold text-slate-800">购物服务</h2>
+                    <span class="text-[11px] text-slate-400">快捷入口</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    {# 我的订单 #}
+                    <a href="{% if user.is_authenticated %}{{ shop_orders_url }}{% else %}{% url 'users:login' %}?next={{ shop_orders_url|urlencode }}{% endif %}"
+                       class="group flex items-center gap-2.5 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/80 px-2.5 py-2 shadow-sm ring-1 ring-slate-100/70 transition hover:border-amber-200/90 hover:bg-amber-50/30 hover:ring-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm shadow-amber-500/20 ring-1 ring-white/40" aria-hidden="true">
+                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1 text-left">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-slate-800">我的订单</span>
+                                {% if user.is_authenticated %}
+                                <span class="shrink-0 text-xs tabular-nums text-slate-500">{% if order_count %}{{ order_count }}{% else %}0{% endif %} 笔</span>
+                                {% else %}
+                                <span class="shrink-0 text-xs text-slate-400">登录</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+
+                    {# 购物车 #}
+                    <a href="{% if user.is_authenticated %}{{ mall_cart_url }}{% else %}{% url 'users:login' %}?next={{ mall_cart_url|urlencode }}{% endif %}"
+                       class="group flex items-center gap-2.5 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/80 px-2.5 py-2 shadow-sm ring-1 ring-slate-100/70 transition hover:border-rose-200/90 hover:bg-rose-50/30 hover:ring-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-sm shadow-rose-500/20 ring-1 ring-white/40" aria-hidden="true">
+                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1 text-left">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-slate-800">购物车</span>
+                                <span class="shrink-0 text-xs tabular-nums text-slate-500">{% if cart_total_qty %}{{ cart_total_qty }}{% else %}0{% endif %} 件</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    {# 我的地址 #}
+                    <a href="{% if user.is_authenticated %}{{ mall_addresses_url }}{% else %}{% url 'users:login' %}?next={{ mall_addresses_url|urlencode }}{% endif %}"
+                       class="group flex items-center gap-2.5 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/80 px-2.5 py-2 shadow-sm ring-1 ring-slate-100/70 transition hover:border-violet-200/90 hover:bg-violet-50/30 hover:ring-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-sm shadow-violet-500/20 ring-1 ring-white/40" aria-hidden="true">
+                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1 text-left">
+                            <span class="text-sm font-semibold text-slate-800">我的地址</span>
+                        </div>
+                    </a>
+
+                    {# 退换/售后 #}
+                    <a href="{% if user.is_authenticated %}{{ mall_after_sales_url }}{% else %}{% url 'users:login' %}?next={{ mall_after_sales_url|urlencode }}{% endif %}"
+                       class="group flex items-center gap-2.5 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/80 px-2.5 py-2 shadow-sm ring-1 ring-slate-100/70 transition hover:border-emerald-200/90 hover:bg-emerald-50/30 hover:ring-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-500/20 ring-1 ring-white/40" aria-hidden="true">
+                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1 text-left">
+                            <span class="text-sm font-semibold text-slate-800">退换/售后</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    {# 积分商品：小卡片 + 固定比例图区（任意尺寸图片均 object-cover 居中裁切） #}
+    <div id="mall-products" class="mx-auto max-w-7xl scroll-mt-28 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/80">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 sm:px-4">
+            <h2 class="text-sm font-semibold tracking-tight text-orange-600">积分商品</h2>
+            <form method="get" class="flex flex-wrap items-center gap-2 text-xs">
+                <label class="flex cursor-pointer items-center gap-1.5 text-slate-600">
+                    <input type="checkbox" name="affordable" value="1" {% if affordable_only %}checked{% endif %} class="rounded border-slate-300 text-sky-600 focus:ring-sky-500" {% if not user.is_authenticated %}disabled title="登录后可用"{% endif %}>
+                    可兑换
+                </label>
+                <div class="relative">
+                    <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">🔍</span>
+                    <input type="search" name="q" value="{{ search_q }}" placeholder="名称" class="w-28 rounded-md border border-slate-200 py-1 pl-6 pr-1.5 sm:w-36">
+                </div>
+                <label class="relative">
+                    <span class="sr-only">排序</span>
+                    <select name="sort" class="appearance-none rounded-md border border-slate-200 bg-white py-1 pl-2 pr-6 text-xs">
+                        <option value="" {% if not sort_key %}selected{% endif %}>综合</option>
+                        <option value="points_asc" {% if sort_key == 'points_asc' %}selected{% endif %}>积分↑</option>
+                        <option value="points_desc" {% if sort_key == 'points_desc' %}selected{% endif %}>积分↓</option>
+                    </select>
+                    <span class="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">▾</span>
+                </label>
+                <button type="submit" class="rounded-md bg-sky-600 px-2.5 py-1 font-medium text-white hover:bg-sky-700">筛选</button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 p-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {% for p in products %}
+                <article class="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/60 transition hover:border-orange-200/80 hover:shadow">
+                    {# 固定 1:1 视口，图片绝对铺满，避免原图比例不一导致版面参差 #}
+                    <div class="relative aspect-square w-full shrink-0 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+                        {% if p.image %}
+                            <img src="{{ p.image.url }}" alt="" class="absolute inset-0 h-full w-full object-cover object-center" loading="lazy" decoding="async" width="200" height="200">
+                        {% else %}
+                            <div class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">🎁</div>
+                        {% endif %}
+                    </div>
+                    <div class="flex min-h-0 flex-1 flex-col p-2">
+                        <p class="text-sm font-bold tabular-nums leading-tight text-orange-600">{{ p.points_cost }}<span class="ml-0.5 text-[10px] font-medium">分</span></p>
+                        <h3 class="mt-1 line-clamp-2 min-h-[2.125rem] text-[11px] font-medium leading-snug text-slate-800">{{ p.name }}</h3>
+                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-1.5 text-[10px] tabular-nums text-slate-500">
+                            <span>兑{{ p.redeemed_count }}</span>
+                            <span>存{{ p.stock }}</span>
+                        </div>
+                        {% if user.is_authenticated %}
+                            {% if p.stock < 1 %}
+                            <button type="button" disabled class="mt-1.5 w-full cursor-not-allowed rounded-md bg-slate-200 py-1 text-[11px] font-medium text-slate-500">已抢完</button>
+                            {% else %}
+                            <div class="mt-1.5 grid grid-cols-2 gap-1">
+                                <form method="post" action="{% url 'shop:mall_cart_add' %}" class="min-w-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="product_id" value="{{ p.pk }}">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="flex w-full items-center justify-center gap-0.5 rounded-md border border-rose-200 bg-rose-50/80 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-100/90" title="加入购物车">
+                                        <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        <span class="hidden min-w-0 truncate sm:inline">购物车</span>
+                                    </button>
+                                </form>
+                                {% if user.points_balance < p.points_cost %}
+                                <button type="button" disabled title="积分不足" class="cursor-not-allowed rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-400">不足</button>
+                                {% else %}
+                                <a href="{% url 'shop:mall_checkout' p.pk %}?return_q={{ search_q|urlencode }}&return_affordable={% if affordable_only %}1{% endif %}&return_sort={{ sort_key|urlencode }}" class="flex items-center justify-center rounded-md bg-orange-500 py-1 text-[10px] font-semibold text-white hover:bg-orange-600">兑换</a>
+                                {% endif %}
+                            </div>
+                            {% if p.cart_qty %}
+                            <p class="mt-1 text-center text-[9px] tabular-nums text-rose-600/90">已加 {{ p.cart_qty }} 件</p>
+                            {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'users:login' %}?next={{ request.get_full_path|urlencode }}" class="mt-1.5 flex w-full items-center justify-center rounded-md border border-slate-200 bg-white py-1 text-[11px] font-medium text-sky-600 hover:bg-slate-50">登录兑换 / 加购</a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="col-span-full py-16 text-center text-sm text-slate-400">暂无商品，请在后台添加。</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <footer class="mx-auto max-w-7xl border-t border-slate-200/80 pt-8 text-center text-xs text-slate-400">
+        <p class="space-x-3">
+            <a href="{% url 'home' %}" class="hover:text-slate-600">网站首页</a>
+            <span class="text-slate-300">|</span>
+            <a href="#" class="hover:text-slate-600">用户中心</a>
+            <span class="text-slate-300">|</span>
+            <a href="#" class="hover:text-slate-600">建议反馈</a>
+        </p>
+        <p class="mt-2 text-slate-500">Copyright © {% now "Y" %} 球学堂 · 企业内部学习平台</p>
+    </footer>
+
+</div>
+{% endblock %}
