@@ -3,6 +3,16 @@
 set -e
 cd "$(dirname "$0")/../"
 
+if [ "${CONTAINER_ENV}" = "sep" ];then
+    cp config/env.sep .env
+elif [ "${CONTAINER_ENV}" = "production" ];then
+    cp config/env.prod .env
+else
+    echo ">>> env config: exit 1"
+    exit 1
+
+
+#
 /data/conda/envs/py312/bin/python3 manage.py migrate --noinput
 
 echo ""
