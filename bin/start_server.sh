@@ -10,6 +10,7 @@ elif [ "${CONTAINER_ENV}" = "production" ];then
 else
     echo ">>> env config: exit 1"
     exit 1
+fi
 
 
 #
