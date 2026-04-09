@@ -196,3 +196,9 @@ ADMIN_REGISTER_SECRET = os.environ.get("ADMIN_REGISTER_SECRET", "").strip()
 ADMIN_SITE_HEADER = os.environ.get("ADMIN_SITE_HEADER", "球学堂管理后台")
 ADMIN_SITE_TITLE = os.environ.get("ADMIN_SITE_TITLE", "球学堂")
 ADMIN_INDEX_TITLE = os.environ.get("ADMIN_INDEX_TITLE", "数据与内容管理")
+
+# 允许的跨域 Origin
+CSRF_TRUSTED_ORIGINS = [
+    "https://sep-e-learning.snowballfinance.com",
+    "https://e-learning.snowballfinance.com",
+]
