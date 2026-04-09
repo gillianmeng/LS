@@ -8,8 +8,16 @@ database is upgraded to MySQL 8.0+.
 """
 
 from django.db.backends.mysql import base
+from django.db.backends.mysql import features
+
+
+class DatabaseFeatures(features.DatabaseFeatures):
+    @property
+    def minimum_database_version(self):
+        if self.connection.mysql_is_mariadb:
+            return (10, 4)
+        return (5, 7)
 
 
 class DatabaseWrapper(base.DatabaseWrapper):
-    def check_database_version(self):
-        pass
+    features_class = DatabaseFeatures
