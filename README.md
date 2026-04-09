@@ -4,7 +4,7 @@
 
 ## 版本
 
-**1.0.0**（见仓库根目录 `VERSION`）
+**1.0.1**（见仓库根目录 `VERSION`）
 
 ## 技术栈
 
@@ -32,7 +32,16 @@ python manage.py runserver
 
 ## 仓库
 
-<https://github.com/gillianmeng/LS>
+| 用途 | 地址 | 说明 |
+|------|------|------|
+| GitHub（同步） | <https://github.com/gillianmeng/LS> | 默认分支 `main` |
+| GitLab（生产发布） | <http://git.snowballfinance.com/hr/e-learning> | 生产代码在分支 **`prod`** |
+
+克隆 GitLab 生产分支示例：
+
+```bash
+git clone -b prod http://git.snowballfinance.com/hr/e-learning.git
+```
 
 ## 许可
 
