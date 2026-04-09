@@ -1,3 +1,5 @@
 Django>=6.0,<7
 oss2>=2.18.0
 python-dotenv>=1.0.0
+pymysql
+Pillow
