@@ -1,4 +1,4 @@
-Django>=6.0,<7
+django==4.2
 oss2>=2.18.0
 python-dotenv>=1.0.0
 pymysql
