@@ -8,4 +8,4 @@ cd "$(dirname "$0")"
 echo ""
 echo ">>> start Server:"
 echo ""
-/data/conda/envs/py312/bin/python3 manage.py runserver
+/data/conda/envs/py312/bin/python3 manage.py runserver 0.0.0.0:8000
