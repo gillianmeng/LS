@@ -12,12 +12,25 @@
 - 数据库：SQLite（本地开发）/ MySQL 5.7+（生产，通过 PyMySQL 连接）
 - 可选：阿里云 OSS 媒体存储
 
+## 开发环境配置
+
+本项目使用 Conda 管理 Python 环境。
+
+```bash
+# 创建环境（仅需一次）
+conda create -n e-learning python=3.12 -y
+
+# 激活环境（每次开发前执行）
+conda activate e-learning
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
 ## 本地运行
 
 ```bash
-conda create -n e-learning python=3.12
 conda activate e-learning
-pip install -r requirements.txt
 cp env.example .env          # 按需编辑，勿将密钥提交仓库
 python manage.py migrate
 python manage.py createsuperuser
