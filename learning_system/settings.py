@@ -126,7 +126,11 @@ USE_OSS_MEDIA = os.environ.get("USE_OSS_MEDIA", "").lower() in ("1", "true", "ye
 OSS_ACCESS_KEY_ID = os.environ.get("OSS_ACCESS_KEY_ID", "").strip()
 OSS_ACCESS_KEY_SECRET = os.environ.get("OSS_ACCESS_KEY_SECRET", "").strip()
 OSS_BUCKET_NAME = os.environ.get("OSS_BUCKET_NAME", "e-learning-vods").strip()
+# 服务端 oss2 访问（上传/读对象）：机房可设为内网以走 VPC，省流量费。
 OSS_ENDPOINT = os.environ.get("OSS_ENDPOINT", "https://oss-cn-beijing.aliyuncs.com").strip()
+# 浏览器可访问的公网基址（<img>、FileField.url、签名 URL 必须用公网或 CDN，勿填内网）。
+# 未设置且 OSS_ENDPOINT 为 *-internal* 时，会自动去掉 -internal 推导公网域名。
+OSS_PUBLIC_ENDPOINT = os.environ.get("OSS_PUBLIC_ENDPOINT", "").strip()
 OSS_MEDIA_CUSTOM_DOMAIN = os.environ.get("OSS_MEDIA_CUSTOM_DOMAIN", "").strip()
 OSS_LOCATION = os.environ.get("OSS_LOCATION", "").strip()
 OSS_SIGNED_URL_EXPIRES_SECONDS = int(os.environ.get("OSS_SIGNED_URL_EXPIRES", str(8 * 3600)))
@@ -134,14 +138,30 @@ _OSS_ACL_RAW = os.environ.get("OSS_DEFAULT_OBJECT_ACL", "public-read").strip().l
 OSS_DEFAULT_OBJECT_ACL = _OSS_ACL_RAW if _OSS_ACL_RAW in ("private", "public-read") else "public-read"
 
 
+def _resolved_oss_public_endpoint() -> str:
+    """供 HTML/浏览器使用的 OSS 公网 Endpoint（与 OSS_ENDPOINT 内网分离）。"""
+    if OSS_PUBLIC_ENDPOINT:
+        ep = OSS_PUBLIC_ENDPOINT.rstrip("/")
+        if not ep.startswith("http"):
+            ep = "https://" + ep
+        return ep
+    ep = OSS_ENDPOINT.rstrip("/")
+    if not ep.startswith("http"):
+        ep = "https://" + ep
+    # 内网形如 https://oss-cn-beijing-internal.aliyuncs.com → 公网 bucket 域名
+    if "-internal." in ep or ep.endswith("-internal.aliyuncs.com"):
+        ep = ep.replace("-internal.", ".", 1)
+    return ep
+
+
 def _oss_media_base_url() -> str:
-    """Bucket 外网访问基址（与 AliyunOSSStorage 默认规则一致）。"""
+    """Bucket 对外访问基址（img/video 的 URL；与 AliyunOSSStorage._base_url 一致）。"""
     if OSS_MEDIA_CUSTOM_DOMAIN:
         d = OSS_MEDIA_CUSTOM_DOMAIN.rstrip("/")
         if d.startswith("http://") or d.startswith("https://"):
             return d + "/"
         return f"https://{d}/"
-    host = OSS_ENDPOINT.replace("https://", "").replace("http://", "").strip("/")
+    host = _resolved_oss_public_endpoint().replace("https://", "").replace("http://", "").strip("/")
     return f"https://{OSS_BUCKET_NAME}.{host}/"
 
 
@@ -160,7 +180,8 @@ if USE_OSS_MEDIA:
                 "access_key_secret": OSS_ACCESS_KEY_SECRET,
                 "bucket_name": OSS_BUCKET_NAME,
                 "endpoint": OSS_ENDPOINT,
-                "base_url": (_oss_media_base_url() if OSS_MEDIA_CUSTOM_DOMAIN else None),
+                # 始终用公网/自定义域名生成 FileField.url；勿依赖 endpoint 以免内网域名进 HTML
+                "base_url": _oss_media_base_url(),
                 "location": OSS_LOCATION,
                 "default_object_acl": OSS_DEFAULT_OBJECT_ACL,
             },
@@ -184,6 +205,9 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+
+# 供 oss_signed_urls 等与浏览器共享：始终为公网可解析的 OSS endpoint（与 OSS_ENDPOINT 内网无关）
+OSS_PUBLIC_ENDPOINT_RESOLVED = _resolved_oss_public_endpoint()
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
