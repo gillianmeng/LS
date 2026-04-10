@@ -3,7 +3,7 @@ from django.contrib import admin
 from learning_system.admin_mixins import OptionalFileFieldsAdminMixin
 
 from .forms import ExamAdminForm
-from .models import Course, CourseCategory, Exam, ExamRecord, Instructor, LearningRecord
+from .models import Course, CourseCategory, Exam, ExamRecord, Instructor, LearningPreference, LearningRecord
 
 
 @admin.register(CourseCategory)
@@ -20,6 +20,8 @@ class CourseAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
         "name",
         "content_kind",
         "course_type",
+        "required_deadline",
+        "required_reminder_days",
         "reward_points",
         "view_count",
         "duration_minutes",
@@ -40,6 +42,13 @@ class CourseAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
     save_on_top = True
     fieldsets = (
         ("基本信息", {"fields": ("name", "course_type", "catalog_category", "description")}),
+        (
+            "必修期限与提醒",
+            {
+                "fields": ("required_deadline", "required_reminder_days"),
+                "description": "仅在「课程类型」为必修时生效：设置完成期限与提前多少天进入提醒窗口；选修课可留空。",
+            },
+        ),
         (
             "内容形式",
             {
@@ -157,3 +166,19 @@ class LearningRecordAdmin(admin.ModelAdmin):
     list_filter = ("is_completed",)
     search_fields = ("employee__emp_id", "employee__real_name", "course__name")
     readonly_fields = ("updated_at",)
+
+
+@admin.register(LearningPreference)
+class LearningPreferenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "daily_reminder_enabled",
+        "points_notification_enabled",
+        "verbose_completion_message",
+        "last_daily_reminder_date",
+        "updated_at",
+    )
+    list_filter = ("daily_reminder_enabled", "points_notification_enabled")
+    search_fields = ("employee__emp_id", "employee__real_name")
+    raw_id_fields = ("employee",)
+    readonly_fields = ("last_daily_reminder_date", "updated_at")

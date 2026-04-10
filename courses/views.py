@@ -5,11 +5,20 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
-from django.db.models import F, Prefetch
+from django.db.models import F, Prefetch, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from courses.models import Course, CourseCategory, Exam, ExamRecord, Instructor, LearningRecord
+from courses.forms import LearningPreferenceForm
+from courses.models import (
+    Course,
+    CourseCategory,
+    Exam,
+    ExamRecord,
+    Instructor,
+    LearningPreference,
+    LearningRecord,
+)
 from learning_system.oss_signed_urls import sign_oss_get_url
 from users.models import LeaderboardConfig
 
@@ -113,9 +122,15 @@ def course_mark_complete(request, pk):
         course=course,
         defaults={"progress_percentage": 100, "is_completed": True},
     )
+    pref = LearningPreference.objects.filter(employee_id=request.user.pk).first()
+    verbose = pref is None or pref.verbose_completion_message
+
     if not created:
         if rec.is_completed:
-            messages.info(request, "您已标记学完该课程。")
+            messages.info(
+                request,
+                "您已标记学完该课程。" if verbose else "已标记学完。",
+            )
             return redirect("courses:course_detail", pk=pk)
         rec.progress_percentage = 100
         rec.is_completed = True
@@ -123,7 +138,15 @@ def course_mark_complete(request, pk):
 
     granted = int(getattr(rec, "_points_granted_on_complete", 0) or 0)
     reason = getattr(rec, "_points_grant_reason", "") or ""
-    if granted > 0:
+
+    if not verbose:
+        if reason == "daily_cap":
+            messages.warning(request, "今日学习类积分已达每日上限，本次未再发放积分。")
+        elif reason == "already":
+            messages.info(request, "已记录为学完。")
+        else:
+            messages.success(request, "已记录为学完。")
+    elif granted > 0:
         messages.success(request, f"已记录为学完，获得 {granted} 积分。")
     elif reason == "daily_cap":
         messages.warning(request, "今日学习类积分已达每日上限，本次未再发放积分。")
@@ -154,6 +177,11 @@ def course_detail(request, pk):
         else:
             course_video_src = course.video_file.url
 
+    required_deadline_state = None
+    if course.course_type == Course.CourseType.REQUIRED:
+        done = bool(learning_record and learning_record.is_completed)
+        required_deadline_state = course.get_required_deadline_state(is_completed=done)
+
     return render(
         request,
         "courses/course_detail.html",
@@ -162,12 +190,13 @@ def course_detail(request, pk):
             "learning_record": learning_record,
             "youtube_embed_url": _youtube_embed_url(course.video_url or ""),
             "course_video_src": course_video_src,
+            "required_deadline_state": required_deadline_state,
         },
     )
 
 
 def get_dashboard_context(request):
-    """首页与「我的学习」共用的榜单、课程与学习记录数据。"""
+    """首页与「知识殿堂」共用的榜单、课程与学习记录数据。"""
     lb_cfg = LeaderboardConfig.get_solo()
     qs = User.objects.all().order_by("-points_balance", "emp_id")
     if lb_cfg.exclude_staff:
@@ -199,7 +228,7 @@ def get_dashboard_context(request):
     )
 
     learning_history = []
-    learning_tasks = []
+    learning_task_rows = []
     if request.user.is_authenticated:
         learning_history = list(
             LearningRecord.objects.filter(employee=request.user)
@@ -209,11 +238,35 @@ def get_dashboard_context(request):
         done_ids = LearningRecord.objects.filter(
             employee=request.user, is_completed=True
         ).values_list("course_id", flat=True)
-        learning_tasks = list(
-            Course.objects.filter(course_type=Course.CourseType.REQUIRED)
-            .exclude(id__in=done_ids)
-            .order_by("-created_at")[:6]
+        raw_required = list(
+            Course.objects.filter(course_type=Course.CourseType.REQUIRED).exclude(
+                id__in=done_ids
+            )
         )
+        for c in raw_required:
+            st = c.get_required_deadline_state(is_completed=False)
+            if st is not None:
+                learning_task_rows.append(
+                    {"task_type": "course", "course": c, "deadline_state": st}
+                )
+
+        for ex in Exam.objects.filter(kind=Exam.Kind.EXAM, is_published=True).order_by(
+            "-created_at"
+        )[:80]:
+            st = ex.get_learning_task_state(request.user)
+            if st is not None:
+                learning_task_rows.append(
+                    {"task_type": "exam", "exam": ex, "deadline_state": st}
+                )
+
+        def _task_sort_key(row):
+            st = row["deadline_state"]
+            ts = st.get("sort_ts")
+            tsv = ts.timestamp() if ts is not None else 1e30
+            return (st["sort_priority"], tsv)
+
+        learning_task_rows.sort(key=_task_sort_key)
+        learning_task_rows = learning_task_rows[:12]
 
     return {
         "leaderboard": leaderboard_list,
@@ -228,7 +281,7 @@ def get_dashboard_context(request):
         "course_category_roots": _course_category_roots(),
         "instructors": instructors,
         "learning_history": learning_history,
-        "learning_tasks": learning_tasks,
+        "learning_task_rows": learning_task_rows,
     }
 
 
@@ -255,7 +308,46 @@ def get_public_home_context(request):
         "course_category_roots": _course_category_roots(),
         "instructors": [],
         "learning_history": [],
-        "learning_tasks": [],
+        "learning_task_rows": [],
+    }
+
+
+def _my_learning_sidebar_stats(user):
+    """「知识殿堂」侧栏三项：今日学习类积分、合格考试数、已完课累计时长（分钟）。"""
+    from shop.models import PointsLedger
+    from shop.points_awards import shanghai_day_bounds, shanghai_today
+
+    d = shanghai_today()
+    start, end = shanghai_day_bounds(d)
+    today_learning_points = (
+        PointsLedger.objects.filter(
+            employee=user,
+            source__in=(
+                PointsLedger.Source.DAILY_LOGIN,
+                PointsLedger.Source.COURSE_COMPLETE,
+            ),
+            created_at__gte=start,
+            created_at__lt=end,
+        ).aggregate(s=Sum("amount"))["s"]
+        or 0
+    )
+
+    certificates_count = ExamRecord.objects.filter(
+        employee=user,
+        score__isnull=False,
+    ).filter(score__gte=F("exam__pass_score")).count()
+
+    total_study_minutes = (
+        LearningRecord.objects.filter(employee=user, is_completed=True).aggregate(
+            s=Sum("course__duration_minutes")
+        )["s"]
+        or 0
+    )
+
+    return {
+        "today_learning_points": int(today_learning_points),
+        "certificates_count": certificates_count,
+        "total_study_minutes": int(total_study_minutes),
     }
 
 
@@ -302,13 +394,14 @@ def _my_learning_hottest_blocks(ctx):
 def my_learning(request):
     ctx = get_dashboard_context(request)
     ctx["courses_hottest_blocks"] = _my_learning_hottest_blocks(ctx)
+    ctx.update(_my_learning_sidebar_stats(request.user))
     return render(request, "courses/my_learning.html", ctx)
 
 
 @login_required
 @require_POST
 def my_profile_update(request):
-    """「我的学习」侧栏：更新头像与签名档。"""
+    """「知识殿堂」侧栏：更新头像与签名档。"""
     employee = request.user
     employee.signature = (request.POST.get("signature") or "").strip()[:500]
 
@@ -346,11 +439,33 @@ def _learning_section_context(request, *, primary: str):
 @login_required
 def my_training(request):
     ctx = _learning_section_context(request, primary="training")
+    req_courses = list(
+        Course.objects.filter(course_type=Course.CourseType.REQUIRED).order_by("-created_at")[:80]
+    )
+    req_ids = [c.pk for c in req_courses]
+    rec_map = {}
+    if req_ids:
+        rec_map = {
+            r.course_id: r
+            for r in LearningRecord.objects.filter(employee=request.user, course_id__in=req_ids)
+        }
+    required_course_rows = []
+    for c in req_courses:
+        rec = rec_map.get(c.pk)
+        done = bool(rec and rec.is_completed)
+        required_course_rows.append(
+            {
+                "course": c,
+                "record": rec,
+                "deadline_state": c.get_required_deadline_state(is_completed=done),
+            }
+        )
     ctx.update(
         {
             "page_title": "我的培训",
-            "empty_title": "暂无培训项目，去其他模块转转吧",
-            "empty_hint": "培训安排发布后，将在此处展示。",
+            "empty_title": "暂无线下/活动培训报名记录",
+            "empty_hint": "在「活动广场」报名通过后，将显示在「我参与的」列表。上方「必修课程」为系统指派在线课。",
+            "required_course_rows": required_course_rows,
         }
     )
     return render(request, "courses/learning_section.html", ctx)
@@ -446,9 +561,32 @@ def my_exams(request):
 
 
 @login_required
+@require_POST
+def add_to_plan(request, pk):
+    """将课程加入自学计划：创建学习记录（进度 0），已存在则提示。"""
+    course = get_object_or_404(Course, pk=pk)
+    rec, created = LearningRecord.objects.get_or_create(
+        employee=request.user,
+        course=course,
+        defaults={"progress_percentage": 0, "is_completed": False},
+    )
+    if created:
+        messages.success(request, f"已将《{course.name}》加入自学计划。")
+    else:
+        messages.info(request, f"《{course.name}》已在你的自学计划中。")
+    next_url = (request.POST.get("next") or "").strip()
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    ref = request.META.get("HTTP_REFERER")
+    if ref:
+        return redirect(ref)
+    return redirect("courses:my_courses")
+
+
+@login_required
 def my_courses(request):
     """自学计划：当前用户的学习记录（课程）。"""
-    tab = request.GET.get("filter", "learning")
+    tab = request.GET.get("filter", "all")
     if tab not in ("all", "learning", "completed"):
         tab = "learning"
     search_q = request.GET.get("q", "").strip()
@@ -486,6 +624,28 @@ def my_courses(request):
 
 
 @login_required
+def learning_settings(request):
+    """学习提醒、完课提示、积分通知等偏好设置。"""
+    pref, _ = LearningPreference.objects.get_or_create(employee=request.user)
+    if request.method == "POST":
+        form = LearningPreferenceForm(request.POST, instance=pref)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "学习设置已保存。")
+            return redirect("courses:learning_settings")
+    else:
+        form = LearningPreferenceForm(instance=pref)
+    return render(
+        request,
+        "courses/learning_settings.html",
+        {
+            "form": form,
+            "pref": pref,
+        },
+    )
+
+
+@login_required
 def my_applications_redirect(request):
-    """「我的学习 → 我的报名」入口：统一到活动广场的报名列表页。"""
+    """「知识殿堂 → 我的报名」入口：统一到活动广场的报名列表页。"""
     return redirect("shop:my_applications")

@@ -3,8 +3,11 @@
 {% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-5 pb-16 -mx-4 -mt-8 px-4 pt-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h1 class="text-2xl font-bold text-slate-800">自学计划</h1>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">自学计划</h1>
+            <p class="mt-1 text-sm text-slate-500">查看进度、从课程中心添加课程，并在设置中管理学习提醒。</p>
+        </div>
         <form method="get" class="flex items-center gap-2 text-sm text-slate-600">
             <input type="hidden" name="filter" value="{{ course_filter }}">
             <input type="hidden" name="q" value="{{ search_q }}">
@@ -15,8 +18,8 @@
         </form>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:p-5">
+    <div class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/80">
+        <div class="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/40 p-4 sm:p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <nav class="flex gap-6 border-b border-slate-100 pb-2 sm:border-0 sm:pb-0" aria-label="课程状态">
                     <a href="{% url 'courses:my_courses' %}?filter=all&recommended={% if recommended_only %}1{% endif %}&q={{ search_q|urlencode }}"
@@ -35,28 +38,34 @@
                     </div>
                 </form>
             </div>
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <p class="text-sm text-slate-500">共有 <span class="font-semibold text-slate-800">{{ course_count }}</span> 门课程</p>
-                <button type="button" class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">
-                    <span aria-hidden="true">⏰</span>
-                    学习提醒
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{% url 'courses:course_catalog' %}" class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700">
+                        <svg class="h-4 w-4 opacity-95" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        添加课程
+                    </a>
+                    <a href="{% url 'courses:learning_settings' %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50/80 hover:text-sky-800">
+                        <svg class="h-4 w-4 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        提醒与完课设置
+                    </a>
+                </div>
             </div>
         </div>
 
         {% if learning_records %}
             <ul class="divide-y divide-slate-100 p-4 sm:p-5">
                 {% for rec in learning_records %}
-                    <li class="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0">
+                    <li class="flex flex-wrap items-center justify-between gap-4 py-4 transition first:pt-0 hover:bg-slate-50/50 sm:rounded-xl sm:px-2">
                         <div class="min-w-0 flex-1">
                             <a href="{% url 'courses:course_detail' rec.course.pk %}" class="font-medium text-slate-900 hover:text-sky-700 hover:underline">{{ rec.course.name }}</a>
                             <p class="mt-1 text-xs text-slate-500">
-                                {% if rec.is_completed %}已完课{% else %}学习中{% endif %}
-                                · 进度 {{ rec.progress_percentage }}%
+                                {% if rec.is_completed %}<span class="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">已完课</span>{% else %}<span class="rounded bg-sky-50 px-1.5 py-0.5 text-sky-800">学习中</span>{% endif %}
+                                <span class="ml-1 text-slate-400">·</span> 进度 {{ rec.progress_percentage }}%
                             </p>
                         </div>
-                        <div class="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-100 sm:w-40">
-                            <div class="h-full rounded-full bg-sky-500" style="width: {{ rec.progress_percentage }}%"></div>
+                        <div class="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60 sm:w-44">
+                            <div class="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style="width: {{ rec.progress_percentage }}%"></div>
                         </div>
                     </li>
                 {% endfor %}
@@ -74,16 +83,16 @@
                         <rect x="121" y="112" width="14" height="2" fill="#E2E8F0"/>
                     </svg>
                 </div>
-                <p class="mt-4 text-sm text-slate-400">暂无数据</p>
-                {% if not user.is_authenticated %}
-                    <p class="mt-2 text-xs text-slate-400">登录后可查看自学计划</p>
-                {% endif %}
+                <p class="mt-4 text-sm text-slate-400">暂无课程</p>
+                <a href="{% url 'courses:course_catalog' %}" class="mt-3 inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">去选课并加入计划</a>
             </div>
         {% endif %}
     </div>
 
     <p class="text-center text-xs text-slate-400">
-        <a href="{% url 'courses:my_learning' %}" class="text-sky-600 hover:underline">返回我的学习</a>
+        <a href="{% url 'courses:my_learning' %}" class="text-sky-600 hover:underline">返回知识殿堂</a>
+        <span class="mx-2 text-slate-300">|</span>
+        <a href="{% url 'courses:learning_settings' %}" class="text-sky-600 hover:underline">提醒与完课设置</a>
     </p>
 
     <footer class="border-t border-slate-200/80 pt-8 text-center text-[11px] leading-relaxed text-slate-400">

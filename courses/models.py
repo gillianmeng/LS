@@ -1,9 +1,14 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
 from learning_system.upload_utils import delete_replaced_file_fields
+
+# 考试在学习任务中的默认「距开考/距截止」提醒天数（与必修课程默认一致）
+EXAM_LEARNING_TASK_REMINDER_DAYS = 7
 
 
 class CourseCategory(models.Model):
@@ -99,6 +104,19 @@ class Course(models.Model):
         verbose_name="课程目录",
         help_text="选至二级子类，用于首页与全部课程左侧分类筛选。",
     )
+    required_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="必修完成期限",
+        help_text="仅当课程类型为「必修」时生效：学员须在此时间前学完；留空表示不设具体期限（前台仍显示为指派必修）。",
+    )
+    required_reminder_days = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="提醒窗口（天）",
+        help_text="仅必修有效：距「完成期限」前若干天起，知识殿堂「学习任务」等处以醒目样式提醒。留空则按 7 天。",
+        validators=[MinValueValidator(1), MaxValueValidator(366)],
+    )
 
     class Meta:
         verbose_name = "课程"
@@ -122,6 +140,87 @@ class Course(models.Model):
             h, rem = divmod(m, 60)
             return f"{h} 小时 {rem} 分钟" if rem else f"{h} 小时"
         return f"{m} 分钟"
+
+    def get_required_deadline_state(self, *, is_completed: bool) -> dict | None:
+        """必修课程期限与提醒窗口状态；非必修返回 None。"""
+        if self.course_type != self.CourseType.REQUIRED:
+            return None
+        dl = self.required_deadline
+        if is_completed:
+            if dl:
+                local_dl = timezone.localtime(dl)
+                sub = f"已在期限（{local_dl.strftime('%Y-%m-%d %H:%M')}）前完成"
+            else:
+                sub = "指派必修已学完"
+            return {
+                "kind": "completed",
+                "label": "已完成",
+                "subline": sub,
+                "tone": "success",
+                "sort_priority": 9,
+                "deadline": dl,
+                "in_reminder_window": False,
+            }
+        window_days = self.required_reminder_days or 7
+        now = timezone.now()
+        if not dl:
+            return {
+                "kind": "nodl",
+                "label": "须完成",
+                "subline": "指派必修 · 请尽快学完",
+                "tone": "mandatory",
+                "sort_priority": 3,
+                "deadline": None,
+                "in_reminder_window": True,
+                "sort_ts": self.created_at,
+            }
+        local_dl = timezone.localtime(dl)
+        dl_str = local_dl.strftime("%Y-%m-%d %H:%M")
+        window_start = dl - timedelta(days=window_days)
+        in_window = now >= window_start
+        if now > dl:
+            return {
+                "kind": "overdue",
+                "label": "已逾期",
+                "subline": f"须在 {dl_str} 前完成",
+                "tone": "danger",
+                "sort_priority": 0,
+                "deadline": dl,
+                "in_reminder_window": True,
+                "days_left": None,
+                "sort_ts": dl,
+            }
+        delta = dl - now
+        days_left = max(0, delta.days)
+        if in_window:
+            return {
+                "kind": "urgent",
+                "label": "临期须完成",
+                "subline": f"截止 {dl_str}" + (f" · 剩余 {days_left} 天" if days_left else " · 今日截止"),
+                "tone": "warning",
+                "sort_priority": 1,
+                "deadline": dl,
+                "in_reminder_window": True,
+                "days_left": days_left,
+                "sort_ts": dl,
+            }
+        days_until_reminder = max(0, int((window_start - now).total_seconds() // 86400))
+        rem_hint = (
+            f"约 {days_until_reminder} 天后进入 {window_days} 天提醒窗口"
+            if days_until_reminder
+            else f"即将进入 {window_days} 天提醒窗口"
+        )
+        return {
+            "kind": "scheduled",
+            "label": "须完成",
+            "subline": f"请于 {dl_str} 前完成 · {rem_hint}",
+            "tone": "info",
+            "sort_priority": 2,
+            "deadline": dl,
+            "in_reminder_window": False,
+            "days_left": days_left,
+            "sort_ts": dl,
+        }
 
 
 class Instructor(models.Model):
@@ -249,6 +348,88 @@ class Exam(models.Model):
             return "done"
         return "ongoing"
 
+    def get_learning_task_state(self, employee) -> dict | None:
+        """正式考试进入「学习任务」：按开放时间与截止前提醒窗口；已通过者不返回。"""
+        if self.kind != self.Kind.EXAM or not self.is_published:
+            return None
+
+        rec = ExamRecord.objects.filter(employee=employee, exam=self).first()
+        if rec and rec.score is not None and rec.score >= self.pass_score:
+            return None
+
+        now = timezone.now()
+        rtd = timedelta(days=EXAM_LEARNING_TASK_REMINDER_DAYS)
+        sched = self.schedule_status()
+
+        if sched == "done":
+            ends = self.ends_at
+            ends_s = timezone.localtime(ends).strftime("%Y-%m-%d %H:%M") if ends else "—"
+            if rec and rec.score is not None:
+                sub_tail = f"得分 {rec.score}，未达及格线 {self.pass_score}"
+            else:
+                sub_tail = "未参加或未录入成绩"
+            return {
+                "kind": "exam_ended",
+                "label": "考试已结束",
+                "subline": f"已于 {ends_s} 结束 · {sub_tail}",
+                "tone": "danger",
+                "sort_priority": 0,
+                "in_reminder_window": True,
+                "sort_ts": ends or now,
+            }
+
+        if sched == "pending" and self.starts_at:
+            start = self.starts_at
+            win_start = start - rtd
+            in_w = now >= win_start
+            loc_s = timezone.localtime(start).strftime("%Y-%m-%d %H:%M")
+            days = max(0, (start - now).days)
+            sub = f"将于 {loc_s} 开始"
+            if days:
+                sub += f" · 还有 {days} 天"
+            else:
+                sub += " · 今日开考"
+            return {
+                "kind": "exam_pending",
+                "label": "待开考提醒" if in_w else "待开考",
+                "subline": sub + f" · 考前 {EXAM_LEARNING_TASK_REMINDER_DAYS} 天起提醒",
+                "tone": "warning" if in_w else "info",
+                "sort_priority": 1 if in_w else 4,
+                "in_reminder_window": in_w,
+                "sort_ts": start,
+            }
+
+        if self.ends_at:
+            loc_e = timezone.localtime(self.ends_at).strftime("%Y-%m-%d %H:%M")
+            win_end = self.ends_at - rtd
+            in_w = now >= win_end
+            days_left = max(0, (self.ends_at - now).days)
+            sub = f"开放至 {loc_e}"
+            if days_left:
+                sub += f" · 剩余 {days_left} 天"
+            else:
+                sub += " · 今日截止"
+            sub += f" · 截止前 {EXAM_LEARNING_TASK_REMINDER_DAYS} 天起提醒"
+            return {
+                "kind": "exam_ongoing",
+                "label": "临期须参考" if in_w else "须参加考试",
+                "subline": sub,
+                "tone": "warning" if in_w else "info",
+                "sort_priority": 1 if in_w else 3,
+                "in_reminder_window": in_w,
+                "sort_ts": self.ends_at,
+            }
+
+        return {
+            "kind": "exam_ongoing_open",
+            "label": "须参加考试",
+            "subline": "考试进行中 · 不限定截止时间，请尽快完成",
+            "tone": "mandatory",
+            "sort_priority": 3,
+            "in_reminder_window": True,
+            "sort_ts": self.created_at,
+        }
+
 
 class ExamRecord(models.Model):
     """员工在某场考试中的成绩（可后台录入，后续可接在线答题）。"""
@@ -349,3 +530,43 @@ class LearningRecord(models.Model):
 
     def __str__(self):
         return f"{self.employee} - {self.course}"
+
+
+class LearningPreference(models.Model):
+    """学员学习提醒与完课反馈等偏好（一对一）。"""
+
+    employee = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="learning_preference",
+        verbose_name="员工",
+    )
+    daily_reminder_enabled = models.BooleanField(
+        default=True,
+        verbose_name="每日学习提醒",
+        help_text="开启后，当您仍有未学完课程时，系统每日最多通过站内通知提醒一次（上海自然日）。",
+    )
+    last_daily_reminder_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="上次每日提醒业务日",
+        help_text="防重复；由系统自动维护。",
+    )
+    points_notification_enabled = models.BooleanField(
+        default=True,
+        verbose_name="学习类积分站内通知",
+        help_text="关闭后，获得每日登录、完课积分时不再写入顶栏「通知」，积分仍正常到账。",
+    )
+    verbose_completion_message = models.BooleanField(
+        default=True,
+        verbose_name="完课详细提示",
+        help_text="关闭后，标记学完时仅显示简短提示，不再展示积分细则与原因说明。",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        verbose_name = "学习提醒与完课设置"
+        verbose_name_plural = "学习提醒与完课设置"
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} 的学习偏好"

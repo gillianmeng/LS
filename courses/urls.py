@@ -15,5 +15,7 @@ urlpatterns = [
     path("my/projects/", views.my_projects, name="my_projects"),
     path("my/exams/", views.my_exams, name="my_exams"),
     path("my/courses/", views.my_courses, name="my_courses"),
+    path("my/courses/add/<int:pk>/", views.add_to_plan, name="add_to_plan"),
+    path("my/learning-settings/", views.learning_settings, name="learning_settings"),
     path("my/applications/", views.my_applications_redirect, name="my_applications"),
 ]

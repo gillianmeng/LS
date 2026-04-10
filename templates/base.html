@@ -153,7 +153,7 @@
                     <a href="{% url 'home' %}" role="tab" aria-selected="{% if rn == 'home' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'home' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">首页</a>
                 </li>
                 <li class="shrink-0">
-                    <a href="{% url 'courses:my_learning' %}" role="tab" aria-selected="{% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">我的学习</a>
+                    <a href="{% url 'courses:my_learning' %}" role="tab" aria-selected="{% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">知识殿堂</a>
                 </li>
                 <li class="shrink-0">
                     <a href="{% url 'shop:activity_center' %}" role="tab" aria-selected="{% if rn == 'activity_center' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'activity_center' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">活动广场</a>
@@ -168,25 +168,21 @@
             {% endif %}
             </div>
             {% endwith %}
-            <div class="flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
+            <div class="flex flex-wrap items-center justify-end gap-3 text-sm sm:gap-4">
                 {% if user.is_authenticated %}
-                <a href="{% url 'search' %}" class="hit-electric hit-electric--ghost flex rounded-lg p-1.5 text-slate-500 sm:hidden" title="搜索" aria-label="搜索">🔍</a>
-                <form method="get" action="{% url 'search' %}" class="hidden max-w-[200px] flex items-stretch gap-1 sm:flex lg:max-w-[260px]" role="search">
-                    <label class="sr-only" for="nav-search-q">搜索课程、商品</label>
-                    <input type="search" id="nav-search-q" name="q" value="{{ request.GET.q|default:'' }}" placeholder="课程 / 商品"
-                        class="hit-electric-field w-full min-w-0 rounded-lg border border-slate-200 bg-white py-1.5 pl-2 pr-2 text-xs text-slate-800 placeholder:text-slate-400 transition-shadow duration-200">
-                    <button type="submit" class="hit-electric hit-electric--search shrink-0 rounded-lg bg-slate-100 px-2.5 text-xs font-medium text-slate-700">搜索</button>
-                </form>
+                {# 搜索：细线放大镜，进入搜索页（与参考图一致） #}
+                <a href="{% url 'search' %}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#555] transition-colors hover:bg-slate-100 hover:text-slate-900" title="搜索" aria-label="搜索">
+                    <svg class="h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                </a>
                 {% endif %}
                 {% if user.is_authenticated %}
+                {# 通知：经典铃铛轮廓 + 未读角标 #}
                 <details class="relative z-50">
-                    <summary class="hit-electric hit-electric--ghost flex cursor-pointer list-none items-center gap-1 rounded-lg px-1 py-1 text-xs text-slate-600 marker:hidden [&::-webkit-details-marker]:hidden">
-                        <span class="relative inline-flex items-center">
-                            通知
-                            {% if nav_notification_unread_count %}
-                            <span class="absolute -right-2 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-0.5 text-[10px] font-semibold text-white" aria-label="未读 {{ nav_notification_unread_count }}">{% if nav_notification_unread_count > 99 %}99+{% else %}{{ nav_notification_unread_count }}{% endif %}</span>
-                            {% endif %}
-                        </span>
+                    <summary class="relative flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg text-[#555] marker:hidden transition-colors hover:bg-slate-100 hover:text-slate-900 [&::-webkit-details-marker]:hidden" title="通知" aria-label="通知">
+                        <svg class="h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>
+                        {% if nav_notification_unread_count %}
+                        <span class="absolute right-0.5 top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-0.5 text-[10px] font-semibold leading-none text-white">{% if nav_notification_unread_count > 99 %}99+{% else %}{{ nav_notification_unread_count }}{% endif %}</span>
+                        {% endif %}
                     </summary>
                     <div class="absolute right-0 mt-1 max-h-[min(24rem,70vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 text-left shadow-lg">
                         {% if nav_notification_items %}
@@ -204,22 +200,30 @@
                         <div class="border-t border-slate-100 px-2 py-1.5 text-center text-[11px] text-slate-400">管理员可在后台发布「站内通知」</div>
                     </div>
                 </details>
-                <span class="hidden items-center gap-2 sm:inline-flex" title="{{ user.real_name|default:user.emp_id }}">
-                    {% if user.avatar %}
-                    <img src="{{ user.avatar.url }}" alt="" width="32" height="32" class="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200">
-                    {% else %}
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{{ user.real_name|default:user.emp_id|slice:":1" }}</span>
-                    {% endif %}
-                    <span class="max-w-[8rem] truncate text-slate-700">{{ user.real_name|default:user.emp_id }}</span>
-                </span>
-                <form method="post" action="{% url 'users:logout' %}" class="inline">
-                    {% csrf_token %}
-                    <button type="submit" class="hit-electric hit-electric--outline rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">退出</button>
-                </form>
+                {# 头像：浅紫灰圆 + 首字；点开含退出 #}
+                <details class="relative z-50">
+                    <summary class="flex cursor-pointer list-none items-center marker:hidden [&::-webkit-details-marker]:hidden" title="{{ user.real_name|default:user.emp_id }}" aria-label="账户菜单">
+                        {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-indigo-100">
+                        {% else %}
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-200/90 text-sm font-semibold text-white shadow-sm">{{ user.real_name|default:user.emp_id|slice:":1" }}</span>
+                        {% endif %}
+                    </summary>
+                    <div class="absolute right-0 mt-1 min-w-[10rem] rounded-xl border border-slate-200 bg-white py-1 text-left shadow-lg">
+                        <p class="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">{{ user.real_name|default:user.emp_id }}</p>
+                        <form method="post" action="{% url 'users:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">退出登录</button>
+                        </form>
+                    </div>
+                </details>
+                {% if user.is_staff or user.is_superuser %}
+                <span class="hidden h-6 w-px shrink-0 bg-slate-200 sm:block" aria-hidden="true"></span>
+                <a href="{% url 'admin:index' %}" class="rounded-lg px-2 py-1.5 text-sm font-medium text-blue-600/45 transition-colors hover:bg-blue-50/80 hover:text-blue-600/90 {% if request.path|slice:':6' == '/admin' %}text-blue-600/90{% endif %}" title="进入管理后台">管理后台</a>
+                {% endif %}
                 {% else %}
                 <a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="hit-electric hit-electric--solid rounded-lg px-3 py-1.5 text-xs font-medium">登录</a>
                 {% endif %}
-                <a href="{% url 'admin:login' %}?next=/admin/" class="hit-electric hit-electric--outline inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 {% if request.path|slice:':6' == '/admin' %}hit-electric--on{% endif %}" title="管理后台登录">工作台</a>
             </div>
         </nav>
     </header>

@@ -21,11 +21,40 @@
         <p class="text-sm text-sky-700">
             学习进度 {{ learning_record.progress_percentage }}%
             {% if learning_record.is_completed %}· 已完课{% endif %}
+            · <a href="{% url 'courses:my_courses' %}" class="font-medium underline-offset-2 hover:underline">自学计划</a>
         </p>
-        {% elif not user.is_authenticated %}
-        <p class="text-sm text-slate-600"><a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="font-medium text-sky-600 hover:underline">登录</a> 后可记录学习进度。</p>
+        {% elif user.is_authenticated %}
+        <div class="space-y-2">
+            <form method="post" action="{% url 'courses:add_to_plan' course.pk %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100">加入自学计划</button>
+            </form>
+            <p class="text-xs text-slate-500">加入后可在本页跟踪进度，并在「知识殿堂 → 我的学习」中查看。</p>
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-600"><a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="font-medium text-sky-600 hover:underline">登录</a> 后可加入自学计划并记录学习进度。</p>
         {% endif %}
     </header>
+
+    {% if required_deadline_state %}
+    <div role="status" class="rounded-2xl border-2 px-4 py-3.5 sm:px-5 sm:py-4
+        {% if required_deadline_state.tone == 'danger' %}border-red-400 bg-gradient-to-r from-red-50 to-rose-50 text-red-950 shadow-sm ring-1 ring-red-200/80
+        {% elif required_deadline_state.tone == 'warning' %}border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 text-amber-950 shadow-sm ring-1 ring-orange-200/80
+        {% elif required_deadline_state.tone == 'info' %}border-slate-300 bg-gradient-to-r from-slate-50 to-white text-slate-800 ring-1 ring-slate-200/80
+        {% elif required_deadline_state.tone == 'success' %}border-emerald-300 bg-gradient-to-r from-emerald-50 to-white text-emerald-900 ring-1 ring-emerald-200/80
+        {% else %}border-rose-400 bg-gradient-to-r from-rose-50 to-orange-50 text-rose-950 ring-1 ring-rose-200/80{% endif %}">
+        <p class="text-sm font-semibold">【必修】{{ required_deadline_state.label }}</p>
+        {% if required_deadline_state.subline %}
+        <p class="mt-1 text-sm opacity-95">{{ required_deadline_state.subline }}</p>
+        {% endif %}
+        {% if required_deadline_state.kind != 'completed' and course.required_deadline %}
+        <p class="mt-2 text-xs opacity-80">
+            提醒窗口：截止前 {% if course.required_reminder_days %}{{ course.required_reminder_days }}{% else %}7{% endif %} 天起，知识殿堂「学习任务」等处以醒目样式提示。
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
 
     {% if course.content_kind == "article" %}
         {% if course.thumbnail or course.cover_url %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}学习提醒与完课设置 — 球学堂{% endblock %}
+{% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-8 pb-16 px-4 pt-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-sky-600/90">学习体验</p>
+            <h1 class="mt-1 text-2xl font-bold text-slate-900">学习提醒与完课设置</h1>
+            <p class="mt-2 text-sm text-slate-500">控制站内通知与页面提示，积分规则不受影响。</p>
+        </div>
+        <a href="{% url 'courses:my_courses' %}" class="shrink-0 text-sm text-sky-600 hover:underline">← 自学计划</a>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+            <div class="border-b border-slate-100 bg-gradient-to-r from-sky-50/80 to-indigo-50/40 px-5 py-4">
+                <h2 class="text-base font-semibold text-slate-900">学习提醒</h2>
+                <p class="mt-1 text-xs text-slate-600">未完成课程时，通过顶栏「通知」提醒您继续学习（每个自然日最多一条）。</p>
+            </div>
+            <div class="px-5 py-5">
+                <label class="flex cursor-pointer gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition hover:border-sky-200/80 hover:bg-white">
+                    {{ form.daily_reminder_enabled }}
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-medium text-slate-800">{{ form.daily_reminder_enabled.label }}</span>
+                        <span class="mt-1 block text-xs text-slate-500">{{ form.daily_reminder_enabled.help_text }}</span>
+                    </span>
+                </label>
+                {% if form.daily_reminder_enabled.errors %}
+                <p class="mt-2 text-xs text-red-600">{{ form.daily_reminder_enabled.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+            <div class="border-b border-slate-100 bg-gradient-to-r from-amber-50/70 to-orange-50/30 px-5 py-4">
+                <h2 class="text-base font-semibold text-slate-900">积分与通知</h2>
+                <p class="mt-1 text-xs text-slate-600">学习类积分（登录、完课）到账时是否写入站内通知。</p>
+            </div>
+            <div class="px-5 py-5">
+                <label class="flex cursor-pointer gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition hover:border-amber-200/80 hover:bg-white">
+                    {{ form.points_notification_enabled }}
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-medium text-slate-800">{{ form.points_notification_enabled.label }}</span>
+                        <span class="mt-1 block text-xs text-slate-500">{{ form.points_notification_enabled.help_text }}</span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+            <div class="border-b border-slate-100 bg-gradient-to-r from-emerald-50/70 to-teal-50/30 px-5 py-4">
+                <h2 class="text-base font-semibold text-slate-900">标记学完</h2>
+                <p class="mt-1 text-xs text-slate-600">在课程页点击「标记学完」后的页面提示风格。</p>
+            </div>
+            <div class="px-5 py-5">
+                <label class="flex cursor-pointer gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition hover:border-emerald-200/80 hover:bg-white">
+                    {{ form.verbose_completion_message }}
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-medium text-slate-800">{{ form.verbose_completion_message.label }}</span>
+                        <span class="mt-1 block text-xs text-slate-500">{{ form.verbose_completion_message.help_text }}</span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        {% if form.non_field_errors %}
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="submit" class="inline-flex min-w-[8rem] items-center justify-center rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">保存设置</button>
+            <a href="{% url 'courses:my_learning' %}" class="text-sm text-slate-500 hover:text-slate-800">返回知识殿堂</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
