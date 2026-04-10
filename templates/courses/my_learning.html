@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block body_extra_class %} !bg-[#f5f7fa]{% endblock %}
-{% block title %}我的学习 — 球学堂{% endblock %}
+{% block title %}知识殿堂 — 球学堂{% endblock %}
 {% block content %}
 <div class="space-y-6">
     {# 桌面：左 3 列（用户卡 · 学习历史 · 积分榜）+ 中 9 列主区展开；移动：先中栏再左栏 #}
@@ -51,17 +51,17 @@
                         <button type="submit" class="w-full rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700">保存</button>
                     </form>
                     <dl class="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
-                        <div class="rounded-lg bg-slate-50 py-2.5">
+                        <div class="rounded-lg bg-slate-50 py-2.5" title="今日获得的学习类积分（每日登录、学完课程，按上海时区统计）">
                             <dt class="text-xs text-slate-500">今日学习</dt>
-                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800"><span class="text-lg">{{ today_learning_points }}</span> <span class="text-[10px] font-normal text-slate-400">积分</span></dd>
                         </div>
-                        <div class="rounded-lg bg-slate-50 py-2.5">
+                        <div class="rounded-lg bg-slate-50 py-2.5" title="成绩达到及格线的考试次数">
                             <dt class="text-xs text-slate-500">获得证书</dt>
-                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800"><span class="text-lg">{{ certificates_count }}</span> <span class="text-[10px] font-normal text-slate-400">次</span></dd>
                         </div>
-                        <div class="rounded-lg bg-slate-50 py-2.5">
+                        <div class="rounded-lg bg-slate-50 py-2.5" title="已标记学完的课程时长合计（分钟）">
                             <dt class="text-xs text-slate-500">总学分</dt>
-                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800">0</dd>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-slate-800"><span class="text-lg">{{ total_study_minutes }}</span> <span class="text-[10px] font-normal text-slate-400">分钟</span></dd>
                         </div>
                     </dl>
             </div>
@@ -79,7 +79,7 @@
                                     <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">[课程]</span>
                                 </p>
                                 <a href="{% url 'courses:course_detail' rec.course.pk %}" class="mt-1.5 line-clamp-2 block text-sm font-medium text-slate-800 hover:text-sky-700">{{ rec.course.name }}</a>
-                                <p class="mt-1 text-xs text-slate-400">学习时长 —</p>
+                                <p class="mt-1 text-xs text-slate-400">{% if rec.course.duration_minutes %}学习时长 {{ rec.course.duration_display }}{% else %}学习时长 —{% endif %}</p>
                                 <div class="mt-2 flex items-center gap-2">
                                     <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                                         <div class="js-learning-progress h-full min-w-0 rounded-full bg-sky-500" data-progress="{{ rec.progress_percentage }}"></div>
@@ -145,34 +145,83 @@
 
             {% include "partials/my_learning_quick_entry.html" %}
 
-            <section id="tasks" class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 class="text-base font-bold text-slate-900">
-                        学习任务
-                        <span class="ml-1 text-sm font-normal text-slate-400">({{ learning_tasks|length }})</span>
-                    </h2>
-                    <div class="flex flex-wrap gap-2 text-xs text-slate-600">
-                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">全部分类 <span class="text-slate-400">▾</span></span>
-                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">全部状态 <span class="text-slate-400">▾</span></span>
-                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">截止时间升序 <span class="text-slate-400">▾</span></span>
-                        <span class="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 hover:border-sky-300">不限时间 <span class="text-slate-400">▾</span></span>
+            <section id="tasks" class="overflow-hidden rounded-2xl border-2 border-rose-300/90 bg-gradient-to-br from-rose-50 via-amber-50/90 to-orange-50 shadow-[0_12px_40px_-12px_rgba(190,18,60,0.35)] ring-1 ring-rose-200/70">
+                <div class="relative border-b border-rose-200/90 bg-gradient-to-r from-rose-800 via-red-800 to-rose-900 px-4 py-4 sm:px-6 sm:py-5">
+                    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_50%)]"></div>
+                    <div class="relative flex flex-wrap items-start gap-4">
+                        <div class="flex min-w-0 flex-1 items-start gap-3">
+                            <span class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-2xl shadow-inner ring-1 ring-white/25" aria-hidden="true">⚠️</span>
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">学习任务</h2>
+                                <p class="mt-1 max-w-2xl text-sm leading-snug text-rose-100/95">指派必修与正式考试须按时完成；临近开考、截止前提醒窗口或逾期将在本栏高亮提示。</p>
+                            </div>
+                        </div>
+                        <span class="shrink-0 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold tabular-nums text-white">{{ learning_task_rows|length }} 项待完成</span>
                     </div>
                 </div>
-                    <ul class="mt-4 space-y-3">
-                        {% for course in learning_tasks %}
+                <div class="p-4 sm:p-5">
+                    <ul class="space-y-3">
+                        {% for row in learning_task_rows %}
+                            {% if row.task_type == 'course' %}
+                            {% with st=row.deadline_state c=row.course %}
                             <li>
-                                <a href="{% url 'courses:course_detail' course.pk %}" class="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm transition hover:border-sky-200 hover:bg-sky-50/60">
-                                    <span class="min-w-0 flex-1 truncate font-medium text-slate-800">{{ course.name }}</span>
-                                    <span class="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">必修</span>
+                                <a href="{% url 'courses:course_detail' c.pk %}" class="group flex flex-col gap-2 rounded-xl border-l-[5px] px-4 py-3.5 shadow-sm transition sm:flex-row sm:items-center sm:justify-between sm:gap-4
+                                    {% if st.tone == 'danger' %}border-l-red-600 bg-red-50/95 ring-1 ring-red-200/80 hover:bg-red-100/90
+                                    {% elif st.tone == 'warning' %}border-l-orange-500 bg-orange-50/95 ring-1 ring-orange-200/80 hover:bg-orange-100/90
+                                    {% elif st.tone == 'info' %}border-l-slate-500 bg-white/90 ring-1 ring-slate-200/90 hover:bg-slate-50
+                                    {% else %}border-l-rose-600 bg-rose-50/95 ring-1 ring-rose-200/80 hover:bg-rose-100/90{% endif %}">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-semibold text-slate-900 group-hover:underline">{{ c.name }}</span>
+                                            <span class="shrink-0 rounded bg-rose-700 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">必修</span>
+                                            {% if st.in_reminder_window %}
+                                            <span class="shrink-0 rounded bg-amber-400/90 px-2 py-0.5 text-[11px] font-bold text-amber-950">提醒窗口</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mt-1.5 text-xs leading-relaxed text-slate-700 sm:text-sm">
+                                            <span class="font-medium text-slate-900">{{ st.label }}</span>
+                                            {% if st.subline %}<span class="text-slate-600"> · {{ st.subline }}</span>{% endif %}
+                                        </p>
+                                    </div>
+                                    <span class="shrink-0 rounded-lg bg-white/80 px-3 py-2 text-center text-xs font-semibold text-rose-900 shadow-sm ring-1 ring-rose-200/60 group-hover:bg-white">立即学习 →</span>
                                 </a>
                             </li>
+                            {% endwith %}
+                            {% else %}
+                            {% with st=row.deadline_state ex=row.exam %}
+                            <li>
+                                <a href="{% url 'courses:my_exams' %}?mode=exam&q={{ ex.title|urlencode }}" class="group flex flex-col gap-2 rounded-xl border-l-[5px] px-4 py-3.5 shadow-sm transition sm:flex-row sm:items-center sm:justify-between sm:gap-4
+                                    {% if st.tone == 'danger' %}border-l-red-600 bg-red-50/95 ring-1 ring-red-200/80 hover:bg-red-100/90
+                                    {% elif st.tone == 'warning' %}border-l-orange-500 bg-orange-50/95 ring-1 ring-orange-200/80 hover:bg-orange-100/90
+                                    {% elif st.tone == 'info' %}border-l-slate-500 bg-white/90 ring-1 ring-slate-200/90 hover:bg-slate-50
+                                    {% else %}border-l-violet-700 bg-violet-50/95 ring-1 ring-violet-200/80 hover:bg-violet-100/90{% endif %}">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-semibold text-slate-900 group-hover:underline">{{ ex.title }}</span>
+                                            <span class="shrink-0 rounded bg-violet-800 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">考试</span>
+                                            {% if st.in_reminder_window %}
+                                            <span class="shrink-0 rounded bg-amber-400/90 px-2 py-0.5 text-[11px] font-bold text-amber-950">提醒窗口</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mt-1.5 text-xs leading-relaxed text-slate-700 sm:text-sm">
+                                            <span class="font-medium text-slate-900">{{ st.label }}</span>
+                                            {% if st.subline %}<span class="text-slate-600"> · {{ st.subline }}</span>{% endif %}
+                                        </p>
+                                    </div>
+                                    <span class="shrink-0 rounded-lg bg-white/80 px-3 py-2 text-center text-xs font-semibold text-violet-950 shadow-sm ring-1 ring-violet-200/60 group-hover:bg-white">去考试 →</span>
+                                </a>
+                            </li>
+                            {% endwith %}
+                            {% endif %}
                         {% empty %}
-                            <div class="flex flex-col items-center py-12 text-center text-slate-400">
-                                <span class="text-5xl">📖</span>
-                                <p class="mt-4 text-sm">暂无学习任务</p>
+                            <div class="flex flex-col items-center rounded-xl border border-dashed border-rose-200/80 bg-white/60 py-14 text-center text-slate-500">
+                                <span class="text-4xl opacity-90" aria-hidden="true">✓</span>
+                                <p class="mt-3 text-sm font-medium text-slate-600">暂无待完成的必修或考试</p>
+                                <p class="mt-1 max-w-sm text-xs text-slate-500">新的指派必修、或未到截止且未通过的正式考试将按时间规则出现在此。</p>
                             </div>
                         {% endfor %}
                     </ul>
+                </div>
             </section>
 
             <section>

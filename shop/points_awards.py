@@ -70,6 +70,57 @@ def _learning_points_earned_today(employee: Employee) -> int:
     return int(total)
 
 
+def _notify_learning_points_granted(
+    employee: Employee,
+    actual: int,
+    source: str,
+    note: str,
+) -> None:
+    """积分入账后写入顶栏站内通知（失败仅打日志，不影响积分）。"""
+    from django.urls import reverse
+
+    from users.models import Notification
+
+    from .models import PointsLedger
+
+    try:
+        from courses.models import LearningPreference
+
+        lp = LearningPreference.objects.filter(employee_id=employee.pk).only(
+            "points_notification_enabled"
+        ).first()
+        if lp is not None and not lp.points_notification_enabled:
+            return
+    except Exception:
+        logger.exception("读取学习积分通知偏好失败，仍尝试发送通知")
+
+    try:
+        if source == PointsLedger.Source.DAILY_LOGIN:
+            title = "每日登录积分已到账"
+            body = f"+{actual} 分 · {note or '每日登录'}"
+        elif source == PointsLedger.Source.COURSE_COMPLETE:
+            title = "完课积分已到账"
+            body = f"+{actual} 分"
+            if note:
+                body = f"+{actual} 分 · {note}"
+        else:
+            title = "学习积分已到账"
+            body = f"+{actual} 分"
+            if note:
+                body = f"+{actual} 分 · {note}"
+        if len(body) > 500:
+            body = body[:497] + "..."
+        link = reverse("courses:my_learning")
+        Notification.objects.create(
+            employee=employee,
+            title=title[:200],
+            body=body[:500],
+            link=link,
+        )
+    except Exception:
+        logger.exception("积分到账通知写入失败（积分已正常入账）")
+
+
 def grant_learning_points(
     employee: Employee,
     amount: int,
@@ -108,6 +159,8 @@ def grant_learning_points(
         )
         EmployeeModel.objects.filter(pk=employee.pk).update(points_balance=F("points_balance") + actual)
     employee.refresh_from_db(fields=["points_balance"])
+    if actual > 0:
+        _notify_learning_points_granted(employee, actual, source, note)
     return actual, "ok"
 
 

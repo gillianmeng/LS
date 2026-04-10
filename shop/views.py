@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -23,6 +25,8 @@ from .models import (
 )
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 _JOINED_TABS = frozenset(("joined", "not_joined"))
 
@@ -655,7 +659,20 @@ def mall_order_cancel(request, pk):
             emp.save(update_fields=["points_balance"])
     except MallOrder.DoesNotExist:
         raise Http404 from None
-    messages.success(request, f"订单已取消，已退回 {order.points_spent} 积分。")
+    refunded = int(order.points_spent)
+    try:
+        from users.models import Notification
+
+        body = f"+{refunded} 分 · 订单号 {order.order_no}"
+        Notification.objects.create(
+            employee=request.user,
+            title="积分退回：订单已取消",
+            body=body[:500],
+            link=reverse("shop:order_detail", args=[order.pk]),
+        )
+    except Exception:
+        logger.exception("取消订单积分退回通知写入失败")
+    messages.success(request, f"订单已取消，已退回 {refunded} 积分。")
     return redirect("shop:order_detail", pk=order.pk)
 
 

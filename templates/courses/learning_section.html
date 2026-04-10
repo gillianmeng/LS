@@ -4,7 +4,7 @@
 <div class="min-h-[calc(100vh-6rem)] bg-[#f5f7fa] -mx-4 -mt-8 px-4 pb-16 pt-6">
     <div class="mx-auto max-w-6xl">
         {# 一级 Tab：我的培训 | 我的外训 | 项目 #}
-        <nav class="flex flex-wrap gap-8 border-b border-slate-200" aria-label="我的学习模块">
+        <nav class="flex flex-wrap gap-8 border-b border-slate-200" aria-label="知识殿堂子模块">
             <a
                 href="{% url 'courses:my_training' %}{% if learning_role %}?role={{ learning_role }}{% endif %}"
                 class="inline-block border-b-2 pb-3 text-lg font-bold transition {% if learning_primary == 'training' %}border-sky-600 text-sky-700{% else %}border-transparent text-slate-600 hover:text-sky-600{% endif %}"
@@ -37,7 +37,57 @@
         </div>
         {% endif %}
 
-        {# 筛选 + 内容区 #}
+        {% if learning_primary == 'training' %}
+        <section class="mt-6 overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm ring-1 ring-amber-100/60">
+            <div class="border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50/40 px-4 py-4 sm:px-5">
+                <h2 class="text-lg font-bold text-slate-900">必修课程</h2>
+            </div>
+            {% if required_course_rows %}
+            <ul class="divide-y divide-slate-100">
+                {% for row in required_course_rows %}
+                <li class="flex flex-wrap items-center justify-between gap-3 border-l-[4px] px-4 py-4 transition hover:bg-slate-50/80 sm:px-5
+                    {% if row.deadline_state.tone == 'danger' %}border-l-red-500 bg-red-50/40
+                    {% elif row.deadline_state.tone == 'warning' %}border-l-orange-500 bg-orange-50/40
+                    {% elif row.deadline_state.tone == 'success' %}border-l-emerald-500 bg-emerald-50/30
+                    {% elif row.deadline_state.tone == 'mandatory' %}border-l-rose-500 bg-rose-50/35
+                    {% else %}border-l-amber-300{% endif %}">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a href="{% url 'courses:course_detail' row.course.pk %}" class="font-medium text-slate-900 hover:text-amber-700 hover:underline">{{ row.course.name }}</a>
+                            {% if row.deadline_state.in_reminder_window and row.deadline_state.kind != 'completed' %}
+                            <span class="rounded bg-amber-200/90 px-1.5 py-0.5 text-[10px] font-bold text-amber-950">提醒窗口</span>
+                            {% endif %}
+                        </div>
+                        <p class="mt-1 text-xs text-slate-600">
+                            <span class="font-medium text-slate-800">{{ row.deadline_state.label }}</span>
+                            {% if row.deadline_state.subline %}<span class="text-slate-500"> · {{ row.deadline_state.subline }}</span>{% endif %}
+                        </p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            {% if row.record %}
+                                {% if row.record.is_completed %}<span class="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">已完课</span>{% else %}<span class="rounded bg-amber-50 px-1.5 py-0.5 text-amber-900">学习中</span>{% endif %}
+                                · 进度 {{ row.record.progress_percentage }}%
+                            {% else %}
+                                <span class="text-slate-400">尚未加入学习记录 · </span><a href="{% url 'courses:course_detail' row.course.pk %}" class="text-sky-600 hover:underline">进入课程</a>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if row.record %}
+                    <div class="h-2 w-full max-w-[10rem] overflow-hidden rounded-full bg-slate-100 sm:w-32">
+                        <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style="width: {{ row.record.progress_percentage }}%"></div>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="px-4 py-12 text-center text-sm text-slate-500 sm:px-5">
+                当前暂无标记为「必修」的课程，请管理员在后台课程设置中选择课程类型为必修。
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {# 筛选 + 内容区（线下/活动培训等） #}
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <form method="get" class="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-white px-4 py-3">
                 {% if learning_primary != 'projects' %}

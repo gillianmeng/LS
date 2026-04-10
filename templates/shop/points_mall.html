@@ -104,7 +104,7 @@
                 <a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="mt-2 inline-block text-sm text-sky-600 hover:underline">员工登录</a>
             {% endif %}
 
-            {# 购物服务：窄图标在左，文案在右（与「我的学习」同系渐变 + SVG） #}
+            {# 购物服务：窄图标在左，文案在右（与「知识殿堂」同系渐变 + SVG） #}
             {% url 'shop:my_orders' as shop_orders_url %}
             {% url 'shop:mall_cart' as mall_cart_url %}
             {% url 'shop:mall_addresses' as mall_addresses_url %}

@@ -6,7 +6,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from .models import Exam
+from .models import Exam, LearningPreference
 
 
 def _combine_local_date_time(d: datetime.date | None, t: datetime.time | None) -> datetime.datetime | None:
@@ -90,3 +90,36 @@ class ExamAdminForm(forms.ModelForm):
         self.instance.starts_at = starts_at
         self.instance.ends_at = ends_at
         return data
+
+
+class LearningPreferenceForm(forms.ModelForm):
+    """前台「学习提醒与完课设置」。"""
+
+    class Meta:
+        model = LearningPreference
+        fields = (
+            "daily_reminder_enabled",
+            "points_notification_enabled",
+            "verbose_completion_message",
+        )
+        labels = {
+            "daily_reminder_enabled": "每日学习提醒（站内通知）",
+            "points_notification_enabled": "学习类积分到账通知",
+            "verbose_completion_message": "标记学完时的详细说明",
+        }
+        help_texts = {
+            "daily_reminder_enabled": "仍有未学完课程时，每个自然日最多提醒一次。",
+            "points_notification_enabled": "关闭后不再推送完课/登录积分到账通知，积分仍会正常发放。",
+            "verbose_completion_message": "关闭后仅显示简短「已记录为学完」，不展开积分与上限说明。",
+        }
+        widgets = {
+            "daily_reminder_enabled": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"}
+            ),
+            "points_notification_enabled": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"}
+            ),
+            "verbose_completion_message": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"}
+            ),
+        }
