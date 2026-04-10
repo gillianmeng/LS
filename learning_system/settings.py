@@ -17,7 +17,7 @@ SECRET_KEY = "django-insecure-p)#^_cfo#7=gnvv88-yjijfn*2_+0l_cb^8@gapzpqi@add9lk
 
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -79,7 +79,7 @@ if not _USE_MYSQL:
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
+            "ENGINE": "learning_system.db_backends.mysql",
             "NAME": os.environ.get("MYSQL_DATABASE", "learning_db"),
             "USER": os.environ.get("MYSQL_USER", "root"),
             "PASSWORD": os.environ.get("MYSQL_PASSWORD", ""),
@@ -197,3 +197,9 @@ ADMIN_REGISTER_SECRET = os.environ.get("ADMIN_REGISTER_SECRET", "").strip()
 ADMIN_SITE_HEADER = os.environ.get("ADMIN_SITE_HEADER", "球学堂管理后台")
 ADMIN_SITE_TITLE = os.environ.get("ADMIN_SITE_TITLE", "球学堂")
 ADMIN_INDEX_TITLE = os.environ.get("ADMIN_INDEX_TITLE", "数据与内容管理")
+
+# 允许的跨域 Origin
+CSRF_TRUSTED_ORIGINS = [
+    "https://sep-e-learning.snowballfinance.com",
+    "https://e-learning.snowballfinance.com",
+]

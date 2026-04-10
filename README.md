@@ -22,21 +22,36 @@
 
 ## 技术栈
 
-- Python 3.x、Django 6.x
-- 可选：阿里云 OSS 媒体存储、PyMySQL / MySQL
+- Python 3.12、Django 4.2
+- 数据库：SQLite（本地开发）/ MySQL 5.7+（生产，通过 PyMySQL 连接）
+- 可选：阿里云 OSS 媒体存储
+
+## 开发环境配置
+
+本项目使用 Conda 管理 Python 环境。
+
+```bash
+# 创建环境（仅需一次）
+conda create -n e-learning python=3.12 -y
+
+# 激活环境（每次开发前执行）
+conda activate e-learning
+
+# 安装依赖
+pip install -r requirements.txt
+```
 
 ## 本地运行
 
 ```bash
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+conda activate e-learning
 cp env.example .env          # 按需编辑，勿将密钥提交仓库
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-数据库默认可使用项目根目录 `db.sqlite3`（开发）；生产请配置 MySQL 等并调整 `learning_system/settings.py` / 环境变量。
+数据库默认使用项目根目录 `db.sqlite3`（无需安装 MySQL）。生产环境设置 `USE_MYSQL=1` 并配置 `MYSQL_*` 环境变量即可切换到 MySQL。
 
 **首次部署或空库**：迁移会尝试创建预置管理员；若无法登录，执行：
 
@@ -50,14 +65,22 @@ python manage.py bootstrap_admin
 
 复制 `env.example` 为 `.env`。常用项：
 
-- `USE_OSS_MEDIA`：本地预览建议 `0`，使用本机 `media/`；`1` 时走 OSS。
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `USE_MYSQL` | _(空)_ | 设为 `1` 启用 MySQL，否则使用 SQLite |
+| `MYSQL_DATABASE` | `learning_db` | MySQL 数据库名 |
+| `MYSQL_HOST` | `127.0.0.1` | MySQL 主机地址 |
+| `MYSQL_PORT` | `3306` | MySQL 端口 |
+| `MYSQL_USER` | `root` | MySQL 用户名 |
+| `MYSQL_PASSWORD` | _(空)_ | MySQL 密码 |
+| `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；`1` 走阿里云 OSS |
 
 ## 仓库与分支
 
 | 用途 | 地址 | 说明 |
 |------|------|------|
 | GitHub（同步） | <https://github.com/gillianmeng/LS> | 默认分支 `main` |
-| GitLab | <http://git.snowballfinance.com/hr/e-learning> | 生产常用分支 **`prod`**；集成/发布分支 **`sep`**（与本 README 版本对齐时请以 `sep` 上标签或提交为准） |
+| GitLab | <http://git.snowballfinance.com/hr/e-learning> | **`sep`**：集成分支（与当前 `VERSION` / README 版本一致）；**`prod`**：生产发布 |
 
 克隆 GitLab 示例：
 
