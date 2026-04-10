@@ -87,7 +87,11 @@ else:
             "PORT": os.environ.get("MYSQL_PORT", "3306"),
             "OPTIONS": {
                 "charset": "utf8mb4",
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+                # NAMES 与会话字符集一致，避免部分环境下列已为 utf8mb4 但连接仍按 latin1 解释
+                "init_command": (
+                    "SET sql_mode='STRICT_TRANS_TABLES', "
+                    "NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                ),
             },
         }
     }

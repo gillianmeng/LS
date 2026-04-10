@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError
 from django.db.models import F, Prefetch, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -412,7 +413,19 @@ def my_profile_update(request):
     elif request.FILES.get("avatar"):
         employee.avatar = request.FILES["avatar"]
 
-    employee.save()
+    try:
+        employee.save()
+    except DatabaseError as exc:
+        err = str(exc)
+        if "1366" in err or "Incorrect string value" in err:
+            messages.error(
+                request,
+                "签名或资料中含特殊符号/表情，当前数据库该表字符集尚未支持。请暂用普通文字，或联系管理员执行 "
+                "`python manage.py migrate`（含 users 与 courses 的 utf8mb4 迁移）后重试。",
+            )
+            return redirect("courses:my_learning")
+        raise
+
     employee.refresh_from_db()
     login(
         request,
