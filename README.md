@@ -4,7 +4,17 @@
 
 ## 版本
 
-当前：**1.2.0**（见仓库根目录 `VERSION`）
+当前：**1.2.1**（见仓库根目录 `VERSION`）
+
+### 1.2.1 相对 1.2.0 的更新
+
+| 类别 | 说明 |
+|------|------|
+| Sep / OSS 媒体 | **`config/env.sep`**：`USE_OSS_MEDIA=1`，与 Sep 数据库中的媒体路径一致；服务端可用 **内网** `OSS_ENDPOINT`，浏览器访问图片/视频需 **公网** `OSS_PUBLIC_ENDPOINT`（与代码中「公网 / 内网 endpoint 分离」一致） |
+| 代码（1.2.0 后已合入） | **`OSS_PUBLIC_ENDPOINT_RESOLVED`**：`MEDIA_URL`、`FileField.url`、**视频签名 URL** 均走公网可解析域名，避免仅配置内网 endpoint 时全站裂图、视频无法播放 |
+| 保密 | Sep 模板中 **不写** OSS AK/SK、MySQL 密码；由部署环境注入（`python-dotenv` 默认不覆盖已存在的环境变量） |
+
+部署 Sep：确认容器/主机已注入 **OSS 密钥** 与 **MySQL 密码**；发布流程仍为 `CONTAINER_ENV=sep` 时复制 `config/env.sep` 为 `.env`（见 `bin/start_server.sh`）。
 
 ### 1.2.0 相对 1.1.0 的更新
 
@@ -84,7 +94,12 @@ python manage.py bootstrap_admin
 | `MYSQL_PORT` | `3306` | MySQL 端口 |
 | `MYSQL_USER` | `root` | MySQL 用户名 |
 | `MYSQL_PASSWORD` | _(空)_ | MySQL 密码 |
-| `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；`1` 走阿里云 OSS |
+| `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；生产 / Sep 使用 OSS 时设为 `1` |
+| `OSS_ENDPOINT` | 公网北京 OSS | 服务端 oss2 用；机房可设为 **内网**（如 `*-internal.aliyuncs.com`） |
+| `OSS_PUBLIC_ENDPOINT` | _(空)_ | 浏览器加载封面/头像/签名视频用；未设且 `OSS_ENDPOINT` 为内网时，代码会去掉 `-internal` 推导公网 |
+| `OSS_BUCKET_NAME` 等 | 见 `env.example` | 与阿里云控制台 Bucket、AK/SK 一致 |
+
+Sep 环境可复制 **`config/env.sep`** 为 `.env` 并补全密钥（或由运维注入环境变量）。
 
 ### MySQL：已知问题与代码内修复
 
@@ -112,7 +127,7 @@ python manage.py bootstrap_admin
 # 生产
 git clone -b prod http://git.snowballfinance.com/hr/e-learning.git
 
-# 集成分支 sep（1.1.0 起）
+# 集成分支 sep（当前版本见仓库 VERSION / README）
 git clone -b sep http://git.snowballfinance.com/hr/e-learning.git
 ```
 
