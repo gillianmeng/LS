@@ -4,7 +4,13 @@
 
 ## 版本
 
-当前：**1.2.1**（见仓库根目录 `VERSION`）
+当前：**1.2.2**（见仓库根目录 `VERSION`）
+
+### 1.2.2 相对 1.2.1 的更新
+
+| 类别 | 说明 |
+|------|------|
+| 密钥与仓库 | **`config/env.sep`** 恢复 **OSS / MySQL 占位**，真实值仅由 **部署平台 Secret 或环境变量** 注入；README 部署说明已同步 |
 
 ### 1.2.1 相对 1.2.0 的更新
 
@@ -14,7 +20,7 @@
 | 代码（1.2.0 后已合入） | **`OSS_PUBLIC_ENDPOINT_RESOLVED`**：`MEDIA_URL`、`FileField.url`、**视频签名 URL** 均走公网可解析域名，避免仅配置内网 endpoint 时全站裂图、视频无法播放 |
 | 保密 | Sep 模板中 **不写** OSS AK/SK、MySQL 密码；由部署环境注入（`python-dotenv` 默认不覆盖已存在的环境变量） |
 
-部署 Sep：确认容器/主机已注入 **OSS 密钥** 与 **MySQL 密码**；发布流程仍为 `CONTAINER_ENV=sep` 时复制 `config/env.sep` 为 `.env`（见 `bin/start_server.sh`）。
+部署 Sep：在部署平台配置 **Secret / 环境变量** 注入 **OSS AK/SK** 与 **MySQL 密码**（仓库内 `config/env.sep` 仅为占位，勿提交真实密钥）。发布流程仍为 `CONTAINER_ENV=sep` 时复制 `config/env.sep` 为 `.env`（见 `bin/start_server.sh`）；若平台已注入同名变量，将覆盖或保留密钥（见文件头注释与 `python-dotenv` 行为）。
 
 ### 1.2.0 相对 1.1.0 的更新
 
