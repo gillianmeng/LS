@@ -4,7 +4,18 @@
 
 ## 版本
 
-当前：**1.1.0**（见仓库根目录 `VERSION`）
+当前：**1.2.0**（见仓库根目录 `VERSION`）
+
+### 1.2.0 相对 1.1.0 的更新
+
+| 类别 | 说明 |
+|------|------|
+| MySQL 字符集 | 迁移 **`courses.0014` / `0015`** 全库转 **utf8mb4**；**`users.0015`** 单独转换 **`users_employee`**（课程正文、**签名档**等含 emoji/特殊符号）；自定义 MySQL 后端连接后 **`SET NAMES utf8mb4`**；命令 **`ensure_mysql_utf8mb4`** 供手工补救 |
+| 后台体验 | **培训活动、学习积分流水** 去掉 `date_hierarchy`，避免 MySQL 未导入时区表时的日期分层报错 |
+| 员工积分 | 后台 **员工** 编辑页增加 **积分调整**（增减 + 说明），写入 **积分流水**（来源「管理员调整」）；`PointsLedger.amount` 支持正负整数 |
+| 前台 | 知识殿堂 **保存签名/头像** 若仍遇 `1366`，返回友好提示并引导迁移 |
+
+部署请执行：`python manage.py migrate`（至少 **`courses.0015`**、**`shop.0016`**、**`users.0015`**）。
 
 ### 与 1.0.1 的区别（1.1.0 更新摘要）
 
@@ -74,6 +85,19 @@ python manage.py bootstrap_admin
 | `MYSQL_USER` | `root` | MySQL 用户名 |
 | `MYSQL_PASSWORD` | _(空)_ | MySQL 密码 |
 | `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；`1` 走阿里云 OSS |
+
+### MySQL：已知问题与代码内修复
+
+| 现象 | 原因 | 项目内处理 |
+|------|------|------------|
+| 后台/前台保存含 **emoji、特殊符号** 报 `1366`（如 `description`、`signature`） | 表列为旧 `utf8`（3 字节） | 迁移 **`courses.0014` / `0015`** 全库转 `utf8mb4`；**`users.0015`** 单独兜底 **`users_employee`**（签名档等）；连接层 **`SET NAMES utf8mb4`**；部署后 **`python manage.py migrate`**。仍失败可：`python manage.py ensure_mysql_utf8mb4` |
+| 后台列表报 `invalid datetime` / 时区定义 | `USE_TZ=True` 时「按日期分层」依赖 MySQL 时区表 | **`Training`、`PointsLedger`** 已去掉 `date_hierarchy`；根治需在 DB 主机导入时区表：`mysql_tzinfo_to_sql /usr/share/zoneinfo \| mysql -u root mysql` |
+
+**部署检查（MySQL 生产）：**
+
+1. `python manage.py migrate`（至少 **`courses.0015`** 与 **`users.0015`**）
+2. 确认 `learning_system/settings.py` 中 MySQL 的 `OPTIONS` 含 `charset: utf8mb4` 与 `NAMES utf8mb4`（见仓库当前文件）
+3. 仍出现 1366：检查 DB 账号是否有 **ALTER** 权限，或联系 DBA 对库执行 `utf8mb4` 转换
 
 ## 仓库与分支
 

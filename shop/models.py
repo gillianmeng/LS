@@ -86,11 +86,12 @@ def get_points_earn_rules_display() -> str:
 
 
 class PointsLedger(models.Model):
-    """学习类积分流水（每日登录、完课）；用于防重与审计。"""
+    """积分流水：学习类发放、管理员手工调整等；用于防重与审计。"""
 
     class Source(models.TextChoices):
         DAILY_LOGIN = "daily_login", "每日登录"
         COURSE_COMPLETE = "course_complete", "课程学完"
+        ADMIN_ADJUST = "admin_adjust", "管理员调整"
 
     employee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -98,7 +99,10 @@ class PointsLedger(models.Model):
         related_name="points_ledger_entries",
         verbose_name="员工",
     )
-    amount = models.PositiveIntegerField(verbose_name="变动积分", help_text="发放为正数。")
+    amount = models.IntegerField(
+        verbose_name="变动积分",
+        help_text="学习类发放为正数；管理员调整可为正（增加）或负（扣减）。",
+    )
     source = models.CharField(max_length=32, choices=Source.choices, verbose_name="来源")
     note = models.CharField(max_length=200, blank=True, verbose_name="说明")
     course = models.ForeignKey(
@@ -135,7 +139,8 @@ class PointsLedger(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.employee_id} +{self.amount} {self.get_source_display()}"
+        sign = "+" if self.amount >= 0 else ""
+        return f"{self.employee_id} {sign}{self.amount} {self.get_source_display()}"
 
 
 class Product(models.Model):

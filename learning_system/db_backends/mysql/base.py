@@ -21,3 +21,15 @@ class DatabaseFeatures(features.DatabaseFeatures):
 
 class DatabaseWrapper(base.DatabaseWrapper):
     features_class = DatabaseFeatures
+
+    def init_connection_state(self):
+        super().init_connection_state()
+        # 与 settings DATABASES OPTIONS 中的 charset/init_command 双保险：部分连接池或旧驱动下
+        # 仅声明 charset 仍可能以 latin1/utf8 会话写入，导致 emoji（4 字节 UTF-8）报 1366。
+        try:
+            with self.cursor() as cursor:
+                cursor.execute(
+                    "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
+        except Exception:
+            pass

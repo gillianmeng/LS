@@ -75,7 +75,7 @@ class PointsLedgerAdmin(admin.ModelAdmin):
     list_filter = ("source",)
     search_fields = ("employee__emp_id", "employee__real_name", "note")
     readonly_fields = ("employee", "amount", "source", "note", "course", "local_date", "created_at")
-    date_hierarchy = "created_at"
+    # 不使用 date_hierarchy：MySQL 未加载时区表时，USE_TZ 下会触发 CONVERT_TZ 报错（见 Django 文档 MySQL time zone definitions）
 
     def has_add_permission(self, request):
         return False
@@ -154,7 +154,7 @@ class TrainingAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
     )
     list_filter = ("is_published", "is_home_featured", "applications_category")
     search_fields = ("title", "summary", "location", "instructor_name", "schedule_note")
-    date_hierarchy = "start_at"
+    # 不使用 date_hierarchy：同上，且 start_at 可空；可按列表「开始时间」列排序筛选
     ordering = ("sort_order", "-start_at")
     inlines = [TrainingRegistrationInline]
     fieldsets = (

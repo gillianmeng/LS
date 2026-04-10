@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm, UserCreationForm
 from django.contrib.auth.models import Group
 
 from .models import Employee
@@ -126,6 +126,51 @@ class StaffRegistrationForm(EmployeeRegistrationForm):
             user.save()
             self.save_m2m()
         return user
+
+
+class EmployeeAdminChangeForm(UserChangeForm):
+    """员工编辑：附加积分调整（写入积分流水，不直接改余额字段）。"""
+
+    points_adjust_delta = forms.IntegerField(
+        label="积分调整",
+        required=False,
+        help_text="相对当前余额增减：正数为增加，负数为扣减；保存后写入「学习积分流水」并更新余额。留空表示不调整。",
+    )
+    points_adjust_note = forms.CharField(
+        label="调整说明",
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "选填，将记入流水说明",
+                "style": "min-width: 28rem;",
+            }
+        ),
+    )
+
+    class Meta(UserChangeForm.Meta):
+        model = Employee
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields.pop("points_adjust_delta", None)
+            self.fields.pop("points_adjust_note", None)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        delta = cleaned_data.get("points_adjust_delta")
+        if delta is None or self.instance.pk is None:
+            return cleaned_data
+        if delta == 0:
+            cleaned_data["points_adjust_delta"] = None
+            return cleaned_data
+        balance = int(self.instance.points_balance or 0)
+        if balance + int(delta) < 0:
+            raise forms.ValidationError(
+                {"points_adjust_delta": "扣减后积分余额不能为负，请减小扣减数量。"}
+            )
+        return cleaned_data
 
 
 class GroupAdminForm(forms.ModelForm):
