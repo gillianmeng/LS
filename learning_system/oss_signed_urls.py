@@ -18,7 +18,8 @@ def sign_oss_get_url(relative_name: str, expires: int | None = None) -> str:
         raise RuntimeError("sign_oss_get_url 仅在 USE_OSS_MEDIA=1 时可用")
     exp = expires if expires is not None else int(getattr(settings, "OSS_SIGNED_URL_EXPIRES_SECONDS", 8 * 3600))
     auth = oss2.Auth(settings.OSS_ACCESS_KEY_ID, settings.OSS_ACCESS_KEY_SECRET)
-    ep = settings.OSS_ENDPOINT.strip().rstrip("/")
+    # 签名 URL 必须在浏览器可访问的主机上；与 MEDIA_URL 一致，勿用内网 endpoint
+    ep = settings.OSS_PUBLIC_ENDPOINT_RESOLVED.strip().rstrip("/")
     if not ep.startswith("http"):
         ep = "https://" + ep
     bucket = oss2.Bucket(auth, ep, settings.OSS_BUCKET_NAME)
