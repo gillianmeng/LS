@@ -1,3 +1,4 @@
+import uuid
 from datetime import timedelta
 
 from django.conf import settings
@@ -116,6 +117,53 @@ class Course(models.Model):
         verbose_name="提醒窗口（天）",
         help_text="仅必修有效：距「完成期限」前若干天起，知识殿堂「学习任务」等处以醒目样式提醒。留空则按 7 天。",
         validators=[MinValueValidator(1), MaxValueValidator(366)],
+    )
+
+    class FocusCourseAction(models.TextChoices):
+        WARN_ONLY = "warn_only", "仅提示告警"
+        BLOCK_COMPLETE = "block_complete", "超过次数禁止标记学完"
+
+    focus_monitor_enabled = models.BooleanField(
+        default=False,
+        verbose_name="启用切屏/失焦监测",
+        help_text="开启后：学员在本课程页切换标签或窗口失焦达到阈值会提示；可按下方规则禁止「标记学完」。",
+    )
+    focus_grace_seconds = models.PositiveSmallIntegerField(
+        default=12,
+        verbose_name="宽限秒数",
+        help_text="进入页面后若干秒内不计切屏，避免误触。",
+        validators=[MinValueValidator(0), MaxValueValidator(120)],
+    )
+    focus_min_hidden_ms = models.PositiveSmallIntegerField(
+        default=800,
+        verbose_name="计次最小时长（毫秒）",
+        help_text="页面处于后台至少该时长才计为 1 次切屏，避免瞬间切换误计。",
+        validators=[MinValueValidator(200), MaxValueValidator(60000)],
+    )
+    focus_warn_after_blurs = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="首次告警阈值（次）",
+        help_text="累计切屏达到此次数起开始弹出提示。",
+        validators=[MinValueValidator(1), MaxValueValidator(999)],
+    )
+    focus_warn_every = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="告警间隔（次）",
+        help_text="之后每再切屏多少次提示一次（1 表示每次都提示）。",
+        validators=[MinValueValidator(1), MaxValueValidator(99)],
+    )
+    focus_max_blurs = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="切屏上限（次）",
+        help_text="留空表示不按次数封禁完课；填写后配合「超限动作」对「标记学完」生效。",
+    )
+    focus_on_course_exceed = models.CharField(
+        max_length=20,
+        choices=FocusCourseAction.choices,
+        default=FocusCourseAction.WARN_ONLY,
+        verbose_name="课程超限动作",
+        help_text="达到「切屏上限」后：仅告警，或禁止点击「标记为已学完」。",
     )
 
     class Meta:
@@ -329,6 +377,49 @@ class Exam(models.Model):
         help_text="可选，跳转外部考试或问卷",
     )
     is_published = models.BooleanField(default=True, verbose_name="发布")
+
+    class FocusExamAction(models.TextChoices):
+        WARN_ONLY = "warn_only", "仅提示告警"
+        FORCE_SUBMIT_ZERO = "force_submit_zero", "超限自动交卷（0分）"
+
+    focus_monitor_enabled = models.BooleanField(
+        default=False,
+        verbose_name="启用切屏/失焦监测",
+        help_text="开启后：学员经「进入考试」中间页打开外链时，本页失焦会计次；达上限可自动写入 0 分交卷。",
+    )
+    focus_grace_seconds = models.PositiveSmallIntegerField(
+        default=12,
+        verbose_name="宽限秒数",
+        validators=[MinValueValidator(0), MaxValueValidator(120)],
+    )
+    focus_min_hidden_ms = models.PositiveSmallIntegerField(
+        default=800,
+        verbose_name="计次最小时长（毫秒）",
+        validators=[MinValueValidator(200), MaxValueValidator(60000)],
+    )
+    focus_warn_after_blurs = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="首次告警阈值（次）",
+        validators=[MinValueValidator(1), MaxValueValidator(999)],
+    )
+    focus_warn_every = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="告警间隔（次）",
+        validators=[MinValueValidator(1), MaxValueValidator(99)],
+    )
+    focus_max_blurs = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="切屏上限（次）",
+        help_text="与「超限动作」配合；留空则只告警不自动交卷。",
+    )
+    focus_on_exam_exceed = models.CharField(
+        max_length=24,
+        choices=FocusExamAction.choices,
+        default=FocusExamAction.WARN_ONLY,
+        verbose_name="考试超限动作",
+    )
+
     created_at = models.DateTimeField(default=timezone.now, verbose_name="创建时间")
 
     class Meta:
@@ -453,6 +544,16 @@ class ExamRecord(models.Model):
         verbose_name="交卷时间",
         help_text="可后台手动填写",
     )
+    focus_forced_zero = models.BooleanField(
+        default=False,
+        verbose_name="因切屏规则记 0 分交卷",
+        help_text="由前台监测超限自动写入；管理员可核对后改分。",
+    )
+    focus_blur_count_reported = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="交卷时累计切屏次数",
+    )
 
     class Meta:
         verbose_name = "考试成绩"
@@ -470,6 +571,64 @@ class ExamRecord(models.Model):
         if self.score is None:
             return None
         return self.score >= self.exam.pass_score
+
+
+class CourseFocusAccum(models.Model):
+    """学员在某门课程上的累计切屏次数（用于完课限制与审计）。"""
+
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="course_focus_accums",
+        verbose_name="员工",
+    )
+    course = models.ForeignKey(
+        "Course",
+        on_delete=models.CASCADE,
+        related_name="focus_accums",
+        verbose_name="课程",
+    )
+    blur_count = models.PositiveIntegerField(default=0, verbose_name="累计切屏次数")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        verbose_name = "课程切屏累计"
+        verbose_name_plural = "课程切屏累计"
+        constraints = [
+            models.UniqueConstraint(fields=["employee", "course"], name="uniq_course_focus_accum"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} · {self.course_id} · {self.blur_count}"
+
+
+class ExamFocusSession(models.Model):
+    """一次「进入考试」中间页的监测会话（外链答题时保留本页计次）。"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    exam = models.ForeignKey(
+        "Exam",
+        on_delete=models.CASCADE,
+        related_name="focus_sessions",
+        verbose_name="考试",
+    )
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="exam_focus_sessions",
+        verbose_name="员工",
+    )
+    blur_count = models.PositiveIntegerField(default=0, verbose_name="累计切屏次数")
+    force_ended = models.BooleanField(default=False, verbose_name="已触发规则结束")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="开始时间")
+
+    class Meta:
+        verbose_name = "考试切屏会话"
+        verbose_name_plural = "考试切屏会话"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.exam_id} · {self.employee_id} · {self.blur_count}"
 
 
 class LearningRecord(models.Model):
@@ -493,6 +652,11 @@ class LearningRecord(models.Model):
         verbose_name="学习进度百分比",
     )
     is_completed = models.BooleanField(default=False, verbose_name="是否已完成")
+    video_playthrough_acknowledged = models.BooleanField(
+        default=False,
+        verbose_name="已确认完整观看视频",
+        help_text="必修视频课：须由播放到结尾（本地/直链）或学员确认（嵌入视频）后，才允许标记学完。",
+    )
     updated_at = models.DateTimeField(default=timezone.now, verbose_name="最近学习时间")
 
     class Meta:

@@ -55,6 +55,13 @@ class ExamAdminForm(forms.ModelForm):
             "max_score",
             "pass_score",
             "entry_url",
+            "focus_monitor_enabled",
+            "focus_grace_seconds",
+            "focus_min_hidden_ms",
+            "focus_warn_after_blurs",
+            "focus_warn_every",
+            "focus_max_blurs",
+            "focus_on_exam_exceed",
             "created_at",
         )
 

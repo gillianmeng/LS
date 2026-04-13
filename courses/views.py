@@ -1,3 +1,4 @@
+import json
 import re
 from types import SimpleNamespace
 
@@ -5,16 +6,22 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
-from django.db import DatabaseError
+from django.core.cache import cache
+from django.db import DatabaseError, transaction
 from django.db.models import F, Prefetch, Sum
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from courses.forms import LearningPreferenceForm
 from courses.models import (
     Course,
     CourseCategory,
+    CourseFocusAccum,
     Exam,
+    ExamFocusSession,
     ExamRecord,
     Instructor,
     LearningPreference,
@@ -80,6 +87,24 @@ def _youtube_embed_url(url: str) -> str | None:
     return None
 
 
+def _course_has_playable_video(course: Course) -> bool:
+    """是否存在可播放的视频区域（上传、直链或 YouTube 等）。"""
+    if course.content_kind != Course.ContentKind.VIDEO:
+        return False
+    if course.video_file:
+        return True
+    return bool((course.video_url or "").strip())
+
+
+def _required_video_must_ack_playthrough(course: Course) -> bool:
+    """必修 + 视频 + 已有视频源：须先确认完整观看，才允许标记学完。"""
+    return (
+        course.course_type == Course.CourseType.REQUIRED
+        and course.content_kind == Course.ContentKind.VIDEO
+        and _course_has_playable_video(course)
+    )
+
+
 @login_required
 def course_catalog(request):
     """全部课程列表（公开），支持左侧目录与 ?category= 筛选。"""
@@ -118,10 +143,37 @@ def course_catalog(request):
 def course_mark_complete(request, pk):
     """学员标记学完：写入学习记录并触发完课积分（若首次且未触达每日上限）。"""
     course = get_object_or_404(Course, pk=pk)
+    if course.focus_monitor_enabled and course.focus_max_blurs is not None:
+        if course.focus_on_course_exceed == Course.FocusCourseAction.BLOCK_COMPLETE:
+            acc = CourseFocusAccum.objects.filter(employee=request.user, course=course).first()
+            if acc and acc.blur_count >= course.focus_max_blurs:
+                messages.error(
+                    request,
+                    f"检测到离开页面次数较多（≥{course.focus_max_blurs} 次），暂不可标记学完。请关闭其他标签页后重新学习本页，或联系管理员。",
+                )
+                return redirect("courses:course_detail", pk=pk)
+
+    from_video_end = request.POST.get("from_video_end") == "1"
+    needs_video_ack = _required_video_must_ack_playthrough(course)
+    existing = LearningRecord.objects.filter(employee=request.user, course=course).first()
+    ack_ok = (existing and existing.video_playthrough_acknowledged) or from_video_end
+    if needs_video_ack and not ack_ok:
+        messages.error(
+            request,
+            "本课程为必修视频课，请先完整观看视频后再标记学完。"
+            "本地或直链视频请播放到结尾（系统将自动尝试记录）；"
+            "若为页面内嵌视频（如 YouTube），请先点击视频区域下方的「我已完整观看本视频」再标记学完。",
+        )
+        return redirect("courses:course_detail", pk=pk)
+
+    defaults = {"progress_percentage": 100, "is_completed": True}
+    if needs_video_ack and from_video_end:
+        defaults["video_playthrough_acknowledged"] = True
+
     rec, created = LearningRecord.objects.get_or_create(
         employee=request.user,
         course=course,
-        defaults={"progress_percentage": 100, "is_completed": True},
+        defaults=defaults,
     )
     pref = LearningPreference.objects.filter(employee_id=request.user.pk).first()
     verbose = pref is None or pref.verbose_completion_message
@@ -133,6 +185,8 @@ def course_mark_complete(request, pk):
                 "您已标记学完该课程。" if verbose else "已标记学完。",
             )
             return redirect("courses:course_detail", pk=pk)
+        if from_video_end:
+            rec.video_playthrough_acknowledged = True
         rec.progress_percentage = 100
         rec.is_completed = True
         rec.save()
@@ -155,7 +209,202 @@ def course_mark_complete(request, pk):
         messages.info(request, "已记录为学完（该课程积分此前已发放）。")
     else:
         messages.success(request, "已记录为学完。")
+    CourseFocusAccum.objects.filter(employee=request.user, course=course).delete()
     return redirect("courses:course_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def video_playthrough_ack(request, pk):
+    """嵌入视频（如 YouTube）无法由本站检测播放结束，由学员确认已完整观看后再允许标记必修学完。"""
+    course = get_object_or_404(Course, pk=pk)
+    if not _required_video_must_ack_playthrough(course):
+        messages.error(request, "该课程不需要此观看确认。")
+        return redirect("courses:course_detail", pk=pk)
+    rec, _ = LearningRecord.objects.get_or_create(
+        employee=request.user,
+        course=course,
+        defaults={"progress_percentage": 0, "is_completed": False},
+    )
+    rec.video_playthrough_acknowledged = True
+    rec.save(update_fields=["video_playthrough_acknowledged", "updated_at"])
+    messages.success(request, "已记录观看确认，您可点击下方「标记为已学完」。")
+    return redirect("courses:course_detail", pk=pk)
+
+
+def _focus_warn_message(count: int, kind: str) -> str:
+    if kind == "exam":
+        return f"您已离开本页 {count} 次。考试期间请尽量保持本页打开，频繁切屏可能被记为违规交卷。"
+    return f"您已离开学习页面 {count} 次，请尽量保持在本页完成学习。"
+
+
+def _should_show_focus_warn(blur_count: int, warn_after: int, warn_every: int) -> bool:
+    if blur_count < warn_after:
+        return False
+    return (blur_count - warn_after) % warn_every == 0
+
+
+@login_required
+@require_POST
+def focus_blur_report(request):
+    """前端上报一次有效「切屏/失焦」事件，返回累计次数与是否提示。"""
+    try:
+        body = json.loads(request.body.decode())
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "invalid json"}, status=400)
+
+    scope = body.get("scope")
+    if scope == "course":
+        course_id = body.get("course_id")
+        if not isinstance(course_id, int) and not (isinstance(course_id, str) and str(course_id).isdigit()):
+            return JsonResponse({"error": "course_id required"}, status=400)
+        course = get_object_or_404(Course, pk=int(course_id))
+        if not course.focus_monitor_enabled:
+            return JsonResponse({"blur_count": 0, "toast": ""})
+
+        throttle_key = f"focusblur:{request.user.pk}:c:{course.pk}"
+        if cache.get(throttle_key):
+            acc = CourseFocusAccum.objects.filter(employee=request.user, course=course).first()
+            return JsonResponse({"blur_count": acc.blur_count if acc else 0, "toast": ""})
+        cache.set(throttle_key, 1, timeout=1)
+
+        with transaction.atomic():
+            accum, _ = CourseFocusAccum.objects.select_for_update().get_or_create(
+                employee=request.user,
+                course=course,
+                defaults={"blur_count": 0},
+            )
+            CourseFocusAccum.objects.filter(pk=accum.pk).update(blur_count=F("blur_count") + 1)
+            accum.refresh_from_db(fields=["blur_count"])
+
+        c = accum.blur_count
+        toast = ""
+        if _should_show_focus_warn(c, course.focus_warn_after_blurs, course.focus_warn_every):
+            toast = _focus_warn_message(c, "course")
+        out = {"blur_count": c, "toast": toast, "toast_level": "warning"}
+        if (
+            course.focus_max_blurs is not None
+            and c >= course.focus_max_blurs
+            and course.focus_on_course_exceed == Course.FocusCourseAction.BLOCK_COMPLETE
+        ):
+            out["toast"] = (
+                f"已超过允许离开次数（{course.focus_max_blurs} 次），将无法标记学完，"
+                "如需申诉请联系管理员。"
+            )
+            out["toast_level"] = "error"
+        return JsonResponse(out)
+
+    if scope == "exam":
+        sid = body.get("session_id")
+        if not sid:
+            return JsonResponse({"error": "session_id required"}, status=400)
+        throttle_key = f"focusblur:{request.user.pk}:e:{sid}"
+        if cache.get(throttle_key):
+            sess = ExamFocusSession.objects.filter(pk=sid, employee=request.user).first()
+            bc = sess.blur_count if sess else 0
+            return JsonResponse({"blur_count": bc, "toast": ""})
+        cache.set(throttle_key, 1, timeout=1)
+
+        with transaction.atomic():
+            session = (
+                ExamFocusSession.objects.select_for_update()
+                .filter(pk=sid, employee=request.user, force_ended=False)
+                .select_related("exam")
+                .first()
+            )
+            if not session:
+                return JsonResponse({"error": "session not found"}, status=404)
+            exam = session.exam
+            if not exam.focus_monitor_enabled:
+                return JsonResponse({"blur_count": 0, "toast": ""})
+
+            ExamFocusSession.objects.filter(pk=session.pk).update(blur_count=F("blur_count") + 1)
+            session.refresh_from_db(fields=["blur_count"])
+
+        c = session.blur_count
+        toast = ""
+        if _should_show_focus_warn(c, exam.focus_warn_after_blurs, exam.focus_warn_every):
+            toast = _focus_warn_message(c, "exam")
+
+        force_redirect = None
+        toast_level_out = "warning"
+        if (
+            exam.focus_max_blurs is not None
+            and c >= exam.focus_max_blurs
+            and exam.focus_on_exam_exceed == Exam.FocusExamAction.FORCE_SUBMIT_ZERO
+        ):
+            with transaction.atomic():
+                session2 = ExamFocusSession.objects.select_for_update().filter(pk=sid).first()
+                if session2 and not session2.force_ended:
+                    rec = ExamRecord.objects.filter(employee=request.user, exam=exam).first()
+                    if rec and rec.score is not None and rec.score >= exam.pass_score:
+                        session2.force_ended = True
+                        session2.save(update_fields=["force_ended"])
+                        toast = "您已通过该考试，切屏监测已结束。"
+                        toast_level_out = "success"
+                    else:
+                        session2.force_ended = True
+                        session2.save(update_fields=["force_ended"])
+                        if rec is None or rec.score is None or rec.score < exam.pass_score:
+                            if rec:
+                                rec.score = 0
+                                rec.submitted_at = timezone.now()
+                                rec.focus_forced_zero = True
+                                rec.focus_blur_count_reported = c
+                                rec.save(
+                                    update_fields=[
+                                        "score",
+                                        "submitted_at",
+                                        "focus_forced_zero",
+                                        "focus_blur_count_reported",
+                                    ]
+                                )
+                            else:
+                                ExamRecord.objects.create(
+                                    employee=request.user,
+                                    exam=exam,
+                                    score=0,
+                                    submitted_at=timezone.now(),
+                                    focus_forced_zero=True,
+                                    focus_blur_count_reported=c,
+                                )
+                        toast = (
+                            f"离开页面次数达到 {exam.focus_max_blurs} 次，系统已按规则记 0 分交卷。"
+                            "您可在测练中心查看成绩。"
+                        )
+                        force_redirect = "/courses/my/exams/?mode=exam&focus_ended=1"
+                        toast_level_out = "error"
+
+        return JsonResponse(
+            {
+                "blur_count": c,
+                "toast": toast,
+                "toast_level": toast_level_out,
+                "force_redirect": force_redirect or "",
+            }
+        )
+
+    return JsonResponse({"error": "invalid scope"}, status=400)
+
+
+@login_required
+def exam_launch(request, pk):
+    """有切屏监测的考试：经本页再打开外链，便于保留本标签计次。"""
+    exam = get_object_or_404(Exam, pk=pk)
+    if not exam.entry_url:
+        messages.error(request, "该考试未配置答题入口链接。")
+        return redirect("courses:my_exams")
+    if not exam.focus_monitor_enabled:
+        return redirect(exam.entry_url)
+    session = ExamFocusSession.objects.create(exam=exam, employee=request.user)
+    return render(
+        request,
+        "courses/exam_launch.html",
+        {
+            "exam": exam,
+            "focus_session": session,
+        },
+    )
 
 
 @login_required
@@ -183,15 +432,52 @@ def course_detail(request, pk):
         done = bool(learning_record and learning_record.is_completed)
         required_deadline_state = course.get_required_deadline_state(is_completed=done)
 
+    focus_monitor_config = None
+    if request.user.is_authenticated and course.focus_monitor_enabled:
+        focus_monitor_config = {
+            "scope": "course",
+            "course_id": course.pk,
+            "grace_seconds": course.focus_grace_seconds,
+            "min_hidden_ms": course.focus_min_hidden_ms,
+            "report_url": reverse("courses:focus_blur_report"),
+        }
+
+    youtube_embed_url = _youtube_embed_url(course.video_url or "")
+    # 视频课：只要有切屏监测就显示「观看前提示」遮罩（含尚未上传视频占位区），不依赖是否已有可播放地址
+    focus_video_gate = bool(
+        focus_monitor_config and course.content_kind == Course.ContentKind.VIDEO
+    )
+    focus_pre_video = None
+    if focus_video_gate:
+        blocks = (
+            course.focus_on_course_exceed == Course.FocusCourseAction.BLOCK_COMPLETE
+        )
+        focus_pre_video = {
+            "max_blurs": course.focus_max_blurs,
+            "blocks_complete": blocks,
+            "grace_seconds": course.focus_grace_seconds,
+            "min_hidden_ms": course.focus_min_hidden_ms,
+        }
+
+    required_video_need_ack = _required_video_must_ack_playthrough(course)
+    video_playthrough_ack_done = bool(
+        learning_record and learning_record.video_playthrough_acknowledged
+    )
+
     return render(
         request,
         "courses/course_detail.html",
         {
             "course": course,
             "learning_record": learning_record,
-            "youtube_embed_url": _youtube_embed_url(course.video_url or ""),
+            "youtube_embed_url": youtube_embed_url,
             "course_video_src": course_video_src,
             "required_deadline_state": required_deadline_state,
+            "focus_monitor_config": focus_monitor_config,
+            "focus_video_gate": focus_video_gate,
+            "focus_pre_video": focus_pre_video,
+            "required_video_need_ack": required_video_need_ack,
+            "video_playthrough_ack_done": video_playthrough_ack_done,
         },
     )
 
@@ -513,6 +799,11 @@ def my_projects(request):
 @login_required
 def my_exams(request):
     """测练中心：考试 / 练习（数据来自后台「考试与练习」）。"""
+    if request.GET.get("focus_ended"):
+        messages.warning(
+            request,
+            "因离开页面次数达到上限，本次考试已按规则自动交卷（0 分）。如有疑问请联系管理员。",
+        )
     mode = request.GET.get("mode", "exam")
     if mode not in ("exam", "practice"):
         mode = "exam"

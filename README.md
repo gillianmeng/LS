@@ -4,7 +4,20 @@
 
 ## 版本
 
-当前：**1.2.0**（见仓库根目录 `VERSION`）
+当前：**1.2.3**（见仓库根目录 `VERSION`）
+
+### 1.2.3 相对 1.2.2 的更新
+
+| 类别 | 说明 |
+|------|------|
+| 后台工作台 | 新增管理员工作台首页（快捷入口、平台总览、图表面板、暗色主题适配）；支持按时间范围切换图表数据与 PNG 导出 |
+| 后台导航与主题 | 重构后台导航模板与主题样式（`admin_theme.css` / `admin_dashboard.css`），优化可读性、层次与交互反馈 |
+| 图表接口 | 新增后台图表数据接口（`users/admin-dashboard/charts/`），提供活跃人数、学习时长、账号状态占比、学习运营雷达等数据 |
+| 管理员快捷入口 | 员工模型新增 `admin_shortcuts`，支持管理员自定义 8 个常用功能入口并持久化排序 |
+| 学习诚信（课程） | 课程支持切屏/失焦监测策略（宽限、最小时长、告警阈值、上限与超限动作）；超限可限制“标记学完” |
+| 学习诚信（考试） | 考试支持切屏监测会话；超限可自动记 0 分交卷（已通过者不覆盖），并记录切屏次数 |
+| 必修视频完课规则 | 必修视频课新增“完整观看确认”机制（支持播放结束自动标记与嵌入视频人工确认） |
+| 数据模型与后台 | 新增课程/考试监测相关模型与后台管理项（`CourseFocusAccum`、`ExamFocusSession`、`focus_forced_zero` 等） |
 
 ### 1.2.0 相对 1.1.0 的更新
 
@@ -84,7 +97,12 @@ python manage.py bootstrap_admin
 | `MYSQL_PORT` | `3306` | MySQL 端口 |
 | `MYSQL_USER` | `root` | MySQL 用户名 |
 | `MYSQL_PASSWORD` | _(空)_ | MySQL 密码 |
-| `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；`1` 走阿里云 OSS |
+| `USE_OSS_MEDIA` | `0` | 本地预览保持 `0`（使用本机 `media/`）；生产 / Sep 使用 OSS 时设为 `1` |
+| `OSS_ENDPOINT` | 公网北京 OSS | 服务端 oss2 用；机房可设为 **内网**（如 `*-internal.aliyuncs.com`） |
+| `OSS_PUBLIC_ENDPOINT` | _(空)_ | 浏览器加载封面/头像/签名视频用；未设且 `OSS_ENDPOINT` 为内网时，代码会去掉 `-internal` 推导公网 |
+| `OSS_BUCKET_NAME` 等 | 见 `env.example` | 与阿里云控制台 Bucket、AK/SK 一致 |
+
+Sep 环境可复制 **`config/env.sep`** 为 `.env` 并补全密钥（或由运维注入环境变量）。
 
 ### MySQL：已知问题与代码内修复
 
@@ -104,7 +122,7 @@ python manage.py bootstrap_admin
 | 用途 | 地址 | 说明 |
 |------|------|------|
 | GitHub（同步） | <https://github.com/gillianmeng/LS> | 默认分支 `main` |
-| GitLab | 略| **`sep`**：集成分支（与当前 `VERSION` / README 版本一致）；**`prod`**：生产发布 |
+| GitLab | <http://git.snowballfinance.com/hr/e-learning> | **`sep`**：集成分支（与当前 `VERSION` / README 版本一致）；**`prod`**：生产发布 |
 
 克隆 GitLab 示例：
 
@@ -112,7 +130,7 @@ python manage.py bootstrap_admin
 # 生产
 git clone -b prod http://git.snowballfinance.com/hr/e-learning.git
 
-# 集成分支 sep（1.1.0 起）
+# 集成分支 sep（当前版本见仓库 VERSION / README）
 git clone -b sep http://git.snowballfinance.com/hr/e-learning.git
 ```
 

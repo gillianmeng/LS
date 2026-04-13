@@ -15,4 +15,7 @@ urlpatterns = [
         views.notification_open,
         name="notification_open",
     ),
+    path("admin-shortcuts/config/", views.admin_shortcuts_config, name="admin_shortcuts_config"),
+    path("admin-shortcuts/save/", views.admin_shortcuts_save, name="admin_shortcuts_save"),
+    path("admin-dashboard/charts/", views.admin_dashboard_chart_data, name="admin_dashboard_chart_data"),
 ]

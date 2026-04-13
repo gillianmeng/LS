@@ -92,7 +92,11 @@
                         <td class="px-4 py-3.5 align-top text-slate-700 sm:px-5">{{ row.result_summary }}</td>
                         <td class="px-4 py-3.5 align-top sm:px-5">
                             {% if e.entry_url %}
-                            <a href="{{ e.entry_url }}" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline">进入</a>
+                                {% if e.focus_monitor_enabled %}
+                                <a href="{% url 'courses:exam_launch' e.pk %}" class="text-sky-600 hover:underline">进入</a>
+                                {% else %}
+                                <a href="{{ e.entry_url }}" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline">进入</a>
+                                {% endif %}
                             {% else %}
                             <span class="text-slate-400">—</span>
                             {% endif %}

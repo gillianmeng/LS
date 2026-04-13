@@ -3,7 +3,17 @@ from django.contrib import admin
 from learning_system.admin_mixins import OptionalFileFieldsAdminMixin
 
 from .forms import ExamAdminForm
-from .models import Course, CourseCategory, Exam, ExamRecord, Instructor, LearningPreference, LearningRecord
+from .models import (
+    Course,
+    CourseCategory,
+    CourseFocusAccum,
+    Exam,
+    ExamFocusSession,
+    ExamRecord,
+    Instructor,
+    LearningPreference,
+    LearningRecord,
+)
 
 
 @admin.register(CourseCategory)
@@ -27,6 +37,7 @@ class CourseAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
         "duration_minutes",
         "is_recommended",
         "exclude_from_hot_ranking",
+        "focus_monitor_enabled",
         "created_at",
     )
     list_filter = (
@@ -69,6 +80,21 @@ class CourseAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
             {
                 "fields": ("is_recommended", "exclude_from_hot_ranking"),
                 "description": "「最热课程」按浏览量排序；若不希望某课参与最热排行，请勾选右侧开关。",
+            },
+        ),
+        (
+            "切屏 / 失焦监测（学习诚信）",
+            {
+                "fields": (
+                    "focus_monitor_enabled",
+                    "focus_grace_seconds",
+                    "focus_min_hidden_ms",
+                    "focus_warn_after_blurs",
+                    "focus_warn_every",
+                    "focus_max_blurs",
+                    "focus_on_course_exceed",
+                ),
+                "description": "开启后仅在本站课程详情页计次；无法防止双设备。达到「切屏上限」且动作为「禁止标记学完」时，学员无法提交「标记为已学完」。",
             },
         ),
         ("统计数据", {"fields": ("view_count", "created_at")}),
@@ -139,6 +165,21 @@ class ExamAdmin(admin.ModelAdmin):
         ),
         ("成绩规则", {"fields": ("max_score", "pass_score")}),
         ("前台入口", {"fields": ("entry_url",), "description": "填写后，员工在「我的考试」列表可点击跳转（如问卷星、外部考试系统）。"}),
+        (
+            "切屏 / 失焦监测",
+            {
+                "fields": (
+                    "focus_monitor_enabled",
+                    "focus_grace_seconds",
+                    "focus_min_hidden_ms",
+                    "focus_warn_after_blurs",
+                    "focus_warn_every",
+                    "focus_max_blurs",
+                    "focus_on_exam_exceed",
+                ),
+                "description": "开启且填写「切屏上限」后，员工经中间页打开外链；保留中间页可计次。选「自动交卷」将在超限时写入 0 分（已通过者不覆盖）。",
+            },
+        ),
         ("创建", {"fields": ("created_at",)}),
         (
             "当前已保存的开放时段（只读核对）",
@@ -154,15 +195,39 @@ class ExamAdmin(admin.ModelAdmin):
 
 @admin.register(ExamRecord)
 class ExamRecordAdmin(admin.ModelAdmin):
-    list_display = ("exam", "employee", "score", "submitted_at")
-    list_filter = ("exam__kind",)
+    list_display = ("exam", "employee", "score", "submitted_at", "focus_forced_zero")
+    list_filter = ("exam__kind", "focus_forced_zero")
     search_fields = ("exam__title", "employee__emp_id", "employee__real_name")
     raw_id_fields = ("exam", "employee")
 
 
+@admin.register(CourseFocusAccum)
+class CourseFocusAccumAdmin(admin.ModelAdmin):
+    list_display = ("employee", "course", "blur_count", "updated_at")
+    search_fields = ("employee__emp_id", "course__name")
+    raw_id_fields = ("employee", "course")
+    readonly_fields = ("updated_at",)
+
+
+@admin.register(ExamFocusSession)
+class ExamFocusSessionAdmin(admin.ModelAdmin):
+    list_display = ("id", "exam", "employee", "blur_count", "force_ended", "created_at")
+    list_filter = ("force_ended",)
+    search_fields = ("exam__title", "employee__emp_id")
+    raw_id_fields = ("exam", "employee")
+    readonly_fields = ("id", "created_at")
+
+
 @admin.register(LearningRecord)
 class LearningRecordAdmin(admin.ModelAdmin):
-    list_display = ("employee", "course", "progress_percentage", "is_completed", "updated_at")
+    list_display = (
+        "employee",
+        "course",
+        "progress_percentage",
+        "is_completed",
+        "video_playthrough_acknowledged",
+        "updated_at",
+    )
     list_filter = ("is_completed",)
     search_fields = ("employee__emp_id", "employee__real_name", "course__name")
     readonly_fields = ("updated_at",)
