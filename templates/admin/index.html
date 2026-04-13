@@ -1,0 +1,109 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static "admin/css/dashboard.css" %}">
+<link rel="stylesheet" href="{% static "css/admin_dashboard.css" %}">
+{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script src="{% static 'js/echarts.min.js' %}" defer></script>
+<script src="{% static 'js/admin_shortcuts.js' %}" defer></script>
+<script src="{% static 'js/admin_dashboard_charts.js' %}" defer></script>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div id="content-main" class="app-list ls-dash-wrap">
+  <div class="ls-right-workspace">
+    <section class="ls-shortcut-panel">
+      <div class="ls-panel-title-row">
+        <h2>常用功能</h2>
+        <div class="ls-shortcut-tools">
+          <span class="ls-shortcut-tip">拖拽按钮可排序（固定 8 个）</span>
+          <button type="button" id="ls-shortcut-picker-open" class="ls-shortcut-plus" aria-label="打开常用功能选择器">+</button>
+        </div>
+      </div>
+      <div id="ls-shortcut-stack" class="ls-shortcut-stack"></div>
+    </section>
+
+    <div id="ls-shortcut-modal" class="ls-shortcut-modal" aria-hidden="true">
+      <div class="ls-shortcut-modal__mask" data-close="1"></div>
+      <div class="ls-shortcut-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ls-shortcut-modal-title">
+        <div class="ls-shortcut-modal__head">
+          <h3 id="ls-shortcut-modal-title">选择常用功能（最多 8 个）</h3>
+          <button type="button" id="ls-shortcut-picker-close" class="ls-shortcut-modal__close" aria-label="关闭">×</button>
+        </div>
+        <div id="ls-shortcut-picker-list" class="ls-shortcut-picker-list"></div>
+        <div class="ls-shortcut-modal__foot">
+          <button type="button" id="ls-shortcut-picker-cancel" class="ls-btn ls-btn--ghost">取消</button>
+          <button type="button" id="ls-shortcut-picker-save" class="ls-btn ls-btn--primary">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="ls-report-panel">
+      <div class="ls-panel-title-row ls-panel-title-row--with-tabs">
+        <h2>平台总览</h2>
+        <div class="ls-time-tabs" id="ls-time-tabs">
+          <a href="#" class="is-active" data-range="month">当月</a>
+          <a href="#" data-range="prev_month">上一月</a>
+          <a href="#" data-range="prev_quarter">上一季度</a>
+          <a href="#" data-range="quarter">当季度</a>
+          <a href="#" data-range="year">全年</a>
+        </div>
+      </div>
+
+      <div class="ls-kpi-grid">
+        <article class="ls-kpi-card"><h3>活跃人数</h3><b>{{ dash.employees_active }}</b></article>
+        <article class="ls-kpi-card"><h3>学习人数</h3><b>{{ dash.completed_learn }}</b></article>
+        <article class="ls-kpi-card"><h3>启用人数</h3><b>{{ dash.employees_total }}</b></article>
+        <article class="ls-kpi-card"><h3>课程总数</h3><b>{{ dash.courses_total }}</b></article>
+        <article class="ls-kpi-card"><h3>学习记录</h3><b>{{ dash.learning_rows }}</b></article>
+        <article class="ls-kpi-card"><h3>答卷记录</h3><b>{{ dash.exam_records }}</b></article>
+      </div>
+
+      <div class="ls-chart-grid">
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>活跃人数 / 学习人数</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-line-people">下载 PNG</button>
+          </div>
+          <div id="ls-chart-line-people" class="ls-chart-canvas"></div>
+        </div>
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>活跃时长 / 学习时长（h）</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-line-hours">下载 PNG</button>
+          </div>
+          <div id="ls-chart-line-hours" class="ls-chart-canvas"></div>
+        </div>
+      </div>
+
+      <div class="ls-chart-grid">
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>账号状态占比</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-pie">下载 PNG</button>
+          </div>
+          <div id="ls-chart-pie" class="ls-chart-canvas"></div>
+        </div>
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>学习运营</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-radar">下载 PNG</button>
+          </div>
+          <div id="ls-chart-radar" class="ls-chart-canvas"></div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}

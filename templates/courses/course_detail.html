@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ course.name }} — 球学堂{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-4xl space-y-6">
@@ -36,6 +37,18 @@
         <p class="text-sm text-slate-600"><a href="{% url 'users:login' %}?next={{ request.path|urlencode }}" class="font-medium text-sky-600 hover:underline">登录</a> 后可加入自学计划并记录学习进度。</p>
         {% endif %}
     </header>
+
+    {% if focus_monitor_config %}
+    <form id="ls-focus-csrf-holder" class="hidden" aria-hidden="true">{% csrf_token %}</form>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200/80" role="status">
+        <p class="font-semibold">本场课程已开启切屏监测</p>
+        {% if focus_video_gate %}
+        <p class="mt-1 text-amber-900/90">开始观看视频前会弹出<strong>学习诚信提示</strong>；确认后系统才开始计次。请尽量在本页完成学习。</p>
+        {% else %}
+        <p class="mt-1 text-amber-900/90">离开本页（切换标签、最小化等）超过一定时长将计次并提示；超过管理员设定次数可能<strong>无法标记学完</strong>。请尽量在本页完成学习。</p>
+        {% endif %}
+    </div>
+    {% endif %}
 
     {% if required_deadline_state %}
     <div role="status" class="rounded-2xl border-2 px-4 py-3.5 sm:px-5 sm:py-4
@@ -102,7 +115,7 @@
         </section>
         {% endif %}
     {% else %}
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm{% if focus_video_gate %} relative{% endif %}">
         {% if youtube_embed_url %}
         <div class="aspect-video w-full">
             <iframe class="h-full w-full" src="{{ youtube_embed_url }}" title="视频播放"
@@ -130,7 +143,34 @@
             管理员尚未上传视频或填写视频链接
         </div>
         {% endif %}
+        {% if focus_video_gate and focus_pre_video %}
+        {# 内联样式保证遮罩必显（不依赖 Tailwind CDN 是否扫描到类名）；z-index 高于 iframe #}
+        <div id="ls-focus-video-overlay" class="absolute inset-0 flex flex-col items-center justify-center gap-4 px-5 py-8 text-center backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="ls-focus-video-title" style="position:absolute;left:0;top:0;right:0;bottom:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:rgba(15,23,42,0.92);">
+            <div class="max-w-md space-y-3 rounded-2xl border border-amber-400/50 bg-amber-50 px-5 py-5 text-left text-sm text-amber-950 shadow-lg ring-1 ring-amber-200/80">
+                <p id="ls-focus-video-title" class="text-base font-bold text-amber-950">学习诚信提示</p>
+                <p>本课已开启切屏 / 失焦监测。切换至其他标签页、其他窗口或长时间最小化本页，若超过约 <strong>{{ focus_pre_video.min_hidden_ms }}</strong> 毫秒，将计为 1 次离开并被记录{% if focus_pre_video.max_blurs and focus_pre_video.blocks_complete %}，<strong>{{ focus_pre_video.max_blurs }}</strong> 次离开将终止学习并无学习成绩{% elif focus_pre_video.max_blurs %}；离开上限为 <strong>{{ focus_pre_video.max_blurs }}</strong> 次，超限后仅告警提示，不自动终止学习{% endif %}。</p>
+                <p>进入页面后约 <strong>{{ focus_pre_video.grace_seconds }}</strong> 秒内不会计次，以免误触。</p>
+                <p class="text-amber-950">请自觉遵守学习纪律。</p>
+            </div>
+            <button type="button" id="ls-focus-video-ack" class="rounded-xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+                我已了解，开始观看
+            </button>
+        </div>
+        {% endif %}
     </div>
+
+    {% if user.is_authenticated and required_video_need_ack and youtube_embed_url and not video_playthrough_ack_done %}
+        {% if not learning_record or not learning_record.is_completed %}
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-slate-800 shadow-sm ring-1 ring-sky-100">
+            <p class="font-semibold text-slate-900">【必修】嵌入视频无法由本站检测是否播完</p>
+            <p class="mt-1 text-slate-700">请先完整观看上方视频，再点击下方按钮确认，之后「标记为已学完」将可用。</p>
+            <form method="post" action="{% url 'courses:video_playthrough_ack' course.pk %}" class="mt-3">
+                {% csrf_token %}
+                <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2">我已完整观看本视频</button>
+            </form>
+        </div>
+        {% endif %}
+    {% endif %}
 
     {% if course.description %}
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -147,8 +187,12 @@
         {% else %}
         <form id="course-complete-form" method="post" action="{% url 'courses:course_mark_complete' course.pk %}" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {% csrf_token %}
+            {% if required_video_need_ack %}
+            <p class="text-sm text-emerald-900">【必修视频】须<strong>完整观看</strong>后方可标记学完：本地或直链视频请<strong>播放到结尾</strong>（系统将自动尝试记录）；若为 YouTube 等嵌入视频，请先点击视频下方「我已完整观看本视频」再标记。积分规则见 <a href="{% url 'shop:points_mall' %}#points-rules" class="font-medium text-sky-700 underline decoration-sky-300 hover:text-sky-800">积分规则</a>。</p>
+            {% else %}
             <p class="text-sm text-emerald-900">学完以上内容后，可点击按钮记录进度；系统将按积分商城规则发放积分（详见 <a href="{% url 'shop:points_mall' %}#points-rules" class="font-medium text-sky-700 underline decoration-sky-300 hover:text-sky-800">积分规则</a>）。视频课在播放到结尾时会自动尝试记录一次。</p>
-            <button type="submit" class="shrink-0 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">标记为已学完</button>
+            {% endif %}
+            <button type="submit" class="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 {% if required_video_need_ack and not video_playthrough_ack_done %}cursor-not-allowed bg-slate-300 text-slate-500 focus-visible:ring-slate-300{% else %}bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500{% endif %}" {% if required_video_need_ack and not video_playthrough_ack_done %}disabled aria-disabled="true" title="请先完整观看视频（或完成嵌入视频的观看确认）"{% endif %}>标记为已学完</button>
         </form>
         {% endif %}
     </section>
@@ -160,6 +204,45 @@
 </div>
 {% endblock %}
 {% block extra_js %}
+{% if focus_monitor_config %}
+<script src="{% static 'js/focus_monitor.js' %}"></script>
+<script>
+(function () {
+    if (!window.lsInitFocusMonitor) return;
+    var tok = document.querySelector("#ls-focus-csrf-holder input[name=csrfmiddlewaretoken]") || document.querySelector("#course-complete-form input[name=csrfmiddlewaretoken]") || document.querySelector("[name=csrfmiddlewaretoken]");
+    var cfg = {
+        scope: "course",
+        courseId: {{ focus_monitor_config.course_id }},
+        reportUrl: "{{ focus_monitor_config.report_url|escapejs }}",
+        csrfToken: tok ? tok.value : "",
+        graceSeconds: {{ focus_monitor_config.grace_seconds }},
+        minHiddenMs: {{ focus_monitor_config.min_hidden_ms }},
+    };
+    function startMonitor() {
+        if (!cfg.csrfToken) return;
+        window.lsInitFocusMonitor(cfg);
+    }
+    {% if focus_video_gate %}
+    var overlay = document.getElementById("ls-focus-video-overlay");
+    var ack = document.getElementById("ls-focus-video-ack");
+    function dismissGate() {
+        if (overlay) {
+            overlay.style.display = "none";
+            overlay.setAttribute("aria-hidden", "true");
+        }
+        startMonitor();
+    }
+    if (overlay && ack) {
+        ack.addEventListener("click", dismissGate);
+    } else {
+        startMonitor();
+    }
+    {% else %}
+    startMonitor();
+    {% endif %}
+})();
+</script>
+{% endif %}
 <script>
 (function () {
     var MAX_RATE = 3;
@@ -214,6 +297,11 @@
         h.name = 'csrfmiddlewaretoken';
         h.value = tok.value;
         f.appendChild(h);
+        var end = document.createElement('input');
+        end.type = 'hidden';
+        end.name = 'from_video_end';
+        end.value = '1';
+        f.appendChild(end);
         document.body.appendChild(f);
         f.submit();
     });

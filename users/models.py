@@ -174,6 +174,12 @@ class Employee(AbstractUser):
         verbose_name="签名档",
         help_text="一句个性签名，显示在个人卡片。",
     )
+    admin_shortcuts = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="后台常用功能",
+        help_text="管理员工作台快捷按钮配置（按顺序存储）。",
+    )
 
     USERNAME_FIELD = "emp_id"
     REQUIRED_FIELDS = ["real_name"]
