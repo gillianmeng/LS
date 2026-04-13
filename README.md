@@ -104,7 +104,7 @@ python manage.py bootstrap_admin
 | 用途 | 地址 | 说明 |
 |------|------|------|
 | GitHub（同步） | <https://github.com/gillianmeng/LS> | 默认分支 `main` |
-| GitLab | <http://git.snowballfinance.com/hr/e-learning> | **`sep`**：集成分支（与当前 `VERSION` / README 版本一致）；**`prod`**：生产发布 |
+| GitLab | 略| **`sep`**：集成分支（与当前 `VERSION` / README 版本一致）；**`prod`**：生产发布 |
 
 克隆 GitLab 示例：
 
