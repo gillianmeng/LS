@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import mimetypes
+import os
 from urllib.parse import quote
 
 import oss2
@@ -16,7 +17,7 @@ from learning_system.oss_common import oss_object_key
 
 @deconstructible
 class AliyunOSSStorage(Storage):
-    """使用 oss2 上传；ACL 由 default_object_acl 控制（课程视频播放见 oss_signed_urls）。"""
+    """使用 oss2 上传；按资源类型自动设置 ACL（图片 public-read、VOD private）。"""
 
     def __init__(
         self,
@@ -42,7 +43,7 @@ class AliyunOSSStorage(Storage):
         acl = (default_object_acl or "public-read").strip().lower()
         if acl not in ("private", "public-read"):
             acl = "public-read"
-        self._object_acl = oss2.OBJECT_ACL_PRIVATE if acl == "private" else oss2.OBJECT_ACL_PUBLIC_READ
+        self._default_object_acl = acl
         auth = oss2.Auth(access_key_id, access_key_secret)
         self._bucket = oss2.Bucket(auth, self.endpoint, bucket_name)
         if base_url:
@@ -61,11 +62,46 @@ class AliyunOSSStorage(Storage):
         result = self._bucket.get_object(key)
         return ContentFile(result.read())
 
+    @staticmethod
+    def _is_vod_key(key: str, content_type: str | None = None) -> bool:
+        normalized = key.lower().replace("\\", "/")
+        ext = os.path.splitext(normalized)[1]
+        vod_exts = {
+            ".mp4",
+            ".m3u8",
+            ".ts",
+            ".mov",
+            ".m4v",
+            ".avi",
+            ".wmv",
+            ".flv",
+            ".webm",
+            ".mkv",
+            ".mp3",
+            ".wav",
+            ".aac",
+            ".flac",
+            ".ogg",
+            ".m4a",
+        }
+        if normalized.startswith("courses/videos/"):
+            return True
+        if ext in vod_exts:
+            return True
+        ct = (content_type or "").lower()
+        return ct.startswith("video/") or ct.startswith("audio/")
+
+    def _pick_object_acl(self, key: str, content_type: str | None = None) -> str:
+        # 安全策略：VOD 私有；图片与其余静态资源默认 public-read。
+        if self._is_vod_key(key, content_type=content_type):
+            return oss2.OBJECT_ACL_PRIVATE
+        return oss2.OBJECT_ACL_PUBLIC_READ
+
     def _save(self, name, content):
         key = self._key(name)
         data = content.read()
         ct = getattr(content, "content_type", None) or mimetypes.guess_type(name)[0]
-        headers: dict[str, str] = {"x-oss-object-acl": self._object_acl}
+        headers: dict[str, str] = {"x-oss-object-acl": self._pick_object_acl(key, content_type=ct)}
         if ct:
             headers["Content-Type"] = ct
         self._bucket.put_object(key, data, headers=headers)

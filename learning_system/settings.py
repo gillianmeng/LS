@@ -121,7 +121,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # 启用：USE_OSS_MEDIA=1，并设置 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET。
 # 可选：OSS_MEDIA_CUSTOM_DOMAIN=cdn.example.com（绑定 CDN 时）
 # 课程详情页内嵌视频：使用短时签名 URL（见 OSS_SIGNED_URL_EXPIRES_SECONDS）。
-# OSS_DEFAULT_OBJECT_ACL：public-read（默认，封面等可直接 URL 访问）或 private（需配合后续图片签名，否则封面可能 403）。
+# 安全策略：图片类资源上传为 public-read；VOD 类资源上传为 private，通过签名 URL 访问。
 USE_OSS_MEDIA = os.environ.get("USE_OSS_MEDIA", "").lower() in ("1", "true", "yes")
 OSS_ACCESS_KEY_ID = os.environ.get("OSS_ACCESS_KEY_ID", "").strip()
 OSS_ACCESS_KEY_SECRET = os.environ.get("OSS_ACCESS_KEY_SECRET", "").strip()
@@ -161,8 +161,14 @@ def _oss_media_base_url() -> str:
         if d.startswith("http://") or d.startswith("https://"):
             return d + "/"
         return f"https://{d}/"
-    host = _resolved_oss_public_endpoint().replace("https://", "").replace("http://", "").strip("/")
-    return f"https://{OSS_BUCKET_NAME}.{host}/"
+
+    ep = _resolved_oss_public_endpoint().rstrip("/")
+    host = ep.replace("https://", "").replace("http://", "").strip("/")
+    # 阿里云标准 endpoint：URL 形如 https://<bucket>.<region-endpoint>/
+    if host.endswith("aliyuncs.com"):
+        return f"https://{OSS_BUCKET_NAME}.{host}/"
+    # 已绑定 bucket 的 CDN/CNAME 域名：URL 直接走该域名
+    return ep + "/"
 
 
 if USE_OSS_MEDIA:
