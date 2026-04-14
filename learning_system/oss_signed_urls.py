@@ -8,6 +8,33 @@ from django.conf import settings
 from learning_system.oss_common import oss_object_key
 
 
+def _normalize_endpoint(ep: str) -> str:
+    v = (ep or "").strip().rstrip("/")
+    if not v:
+        return ""
+    if not v.startswith("http"):
+        v = "https://" + v
+    return v
+
+
+def _endpoint_host(ep: str) -> str:
+    return ep.replace("https://", "").replace("http://", "").strip("/").lower()
+
+
+def _oss_public_endpoint_for_sign() -> str:
+    """签名 URL 需使用 OSS 官方 endpoint；CDN 域名通常不支持 OSS query 鉴权。"""
+    resolved = _normalize_endpoint(getattr(settings, "OSS_PUBLIC_ENDPOINT_RESOLVED", ""))
+    if resolved and _endpoint_host(resolved).endswith("aliyuncs.com"):
+        return resolved
+
+    ep = _normalize_endpoint(getattr(settings, "OSS_ENDPOINT", ""))
+    if not ep:
+        return resolved
+    if "-internal." in ep or ep.endswith("-internal.aliyuncs.com"):
+        ep = ep.replace("-internal.", ".", 1)
+    return ep
+
+
 def sign_oss_get_url(relative_name: str, expires: int | None = None) -> str:
     """
     生成 GET 签名 URL。relative_name 为 FileField.name（与 DB 中一致）。
@@ -18,10 +45,9 @@ def sign_oss_get_url(relative_name: str, expires: int | None = None) -> str:
         raise RuntimeError("sign_oss_get_url 仅在 USE_OSS_MEDIA=1 时可用")
     exp = expires if expires is not None else int(getattr(settings, "OSS_SIGNED_URL_EXPIRES_SECONDS", 8 * 3600))
     auth = oss2.Auth(settings.OSS_ACCESS_KEY_ID, settings.OSS_ACCESS_KEY_SECRET)
-    # 签名 URL 必须在浏览器可访问的主机上；与 MEDIA_URL 一致，勿用内网 endpoint
-    ep = settings.OSS_PUBLIC_ENDPOINT_RESOLVED.strip().rstrip("/")
-    if not ep.startswith("http"):
-        ep = "https://" + ep
+    # 说明：OSS query 签名应使用官方 endpoint（aliyuncs.com）。
+    # 若 OSS_PUBLIC_ENDPOINT 配的是 CDN 域名，这里自动回退到 OSS 公网 endpoint 签名。
+    ep = _oss_public_endpoint_for_sign()
     bucket = oss2.Bucket(auth, ep, settings.OSS_BUCKET_NAME)
     key = oss_object_key(relative_name, getattr(settings, "OSS_LOCATION", "") or "")
     return bucket.sign_url("GET", key, exp, slash_safe=True)

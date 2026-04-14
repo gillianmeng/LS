@@ -202,25 +202,19 @@ def admin_dashboard_chart_data(request):
             next_month = anchor.replace(month=anchor.month + 1, day=1)
         return start_date, next_month - timedelta(days=1)
 
-    def quarter_window(anchor):
-        q_start_month = ((anchor.month - 1) // 3) * 3 + 1
-        start_date = anchor.replace(month=q_start_month, day=1)
-        if q_start_month == 10:
-            next_q_start = anchor.replace(year=anchor.year + 1, month=1, day=1)
-        else:
-            next_q_start = anchor.replace(month=q_start_month + 3, day=1)
-        return start_date, next_q_start - timedelta(days=1)
+    def week_window(anchor):
+        # 周一到周日；当前周上限截到今天
+        start_date = anchor - timedelta(days=anchor.weekday())
+        end_date = start_date + timedelta(days=6)
+        return start_date, end_date
 
-    if range_key == "prev_month":
-        this_month_first = today.replace(day=1)
-        prev_month_day = this_month_first - timedelta(days=1)
-        start, end = month_window(prev_month_day)
-    elif range_key == "quarter":
-        start, end = quarter_window(today)
-    elif range_key == "prev_quarter":
-        current_q_start, _ = quarter_window(today)
-        prev_q_day = current_q_start - timedelta(days=1)
-        start, end = quarter_window(prev_q_day)
+    if range_key == "day":
+        start = today
+        end = today
+    elif range_key == "week":
+        start, end = week_window(today)
+        if end > today:
+            end = today
     elif range_key == "year":
         start = today.replace(month=1, day=1)
         end = today
@@ -265,7 +259,12 @@ def admin_dashboard_chart_data(request):
         if d in active_people_counts:
             active_people_counts[d] = row["c"]
 
-    labels = [d.strftime("%m-%d") for d in axis_days]
+    if range_key == "year":
+        labels = [d.strftime("%m") for d in axis_days]
+    elif range_key == "day":
+        labels = [d.strftime("%m-%d") for d in axis_days]
+    else:
+        labels = [d.strftime("%m-%d") for d in axis_days]
     dates = [d.isoformat() for d in axis_days]
 
     employee_total = Employee.objects.count()
