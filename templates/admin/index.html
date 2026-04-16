@@ -31,21 +31,6 @@
       <div id="ls-shortcut-stack" class="ls-shortcut-stack"></div>
     </section>
 
-    <div id="ls-shortcut-modal" class="ls-shortcut-modal" aria-hidden="true">
-      <div class="ls-shortcut-modal__mask" data-close="1"></div>
-      <div class="ls-shortcut-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ls-shortcut-modal-title">
-        <div class="ls-shortcut-modal__head">
-          <h3 id="ls-shortcut-modal-title">选择常用功能（最多 8 个）</h3>
-          <button type="button" id="ls-shortcut-picker-close" class="ls-shortcut-modal__close" aria-label="关闭">×</button>
-        </div>
-        <div id="ls-shortcut-picker-list" class="ls-shortcut-picker-list"></div>
-        <div class="ls-shortcut-modal__foot">
-          <button type="button" id="ls-shortcut-picker-cancel" class="ls-btn ls-btn--ghost">取消</button>
-          <button type="button" id="ls-shortcut-picker-save" class="ls-btn ls-btn--primary">保存</button>
-        </div>
-      </div>
-    </div>
-
     <section class="ls-report-panel">
       <div class="ls-panel-title-row ls-panel-title-row--with-tabs">
         <h2>平台总览</h2>
@@ -101,6 +86,21 @@
       </div>
 
     </section>
+  </div>
+</div>
+
+<div id="ls-shortcut-modal" class="ls-shortcut-modal" aria-hidden="true">
+  <div class="ls-shortcut-modal__backdrop" data-close="1"></div>
+  <div class="ls-shortcut-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="ls-shortcut-modal-title">
+    <div class="ls-shortcut-modal__head">
+      <h3 id="ls-shortcut-modal-title">选择常用功能</h3>
+      <button type="button" id="ls-shortcut-picker-close" class="ls-shortcut-modal__close" aria-label="关闭">×</button>
+    </div>
+    <div id="ls-shortcut-picker-list" class="ls-shortcut-picker-list"></div>
+    <div class="ls-shortcut-modal__actions">
+      <button type="button" id="ls-shortcut-picker-cancel" class="ls-shortcut-modal__btn ls-shortcut-modal__btn--ghost">取消</button>
+      <button type="button" id="ls-shortcut-picker-save" class="ls-shortcut-modal__btn">保存</button>
+    </div>
   </div>
 </div>
 {% endblock %}

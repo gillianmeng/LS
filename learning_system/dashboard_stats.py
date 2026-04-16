@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from django.db.models import Count
 from django.utils import timezone
 
 
@@ -43,16 +44,24 @@ def get_admin_dashboard_stats() -> dict:
 
         from courses.models import (
             Course,
+            CourseCategory,
             CourseFocusAccum,
             Exam,
             ExamFocusSession,
             ExamRecord,
+            Instructor,
             LearningRecord,
         )
         from shop.models import Training, TrainingRegistration
         from users.models import Employee
 
         course_blur = CourseFocusAccum.objects.aggregate(s=Sum("blur_count"))["s"] or 0
+        instructor_qs = Instructor.objects.filter(is_published=True).annotate(course_count=Count("courses", distinct=True))
+        instructor_with_courses = instructor_qs.filter(course_count__gt=0)
+        instructor_top = instructor_qs.order_by("-course_count", "sort_order", "id").first()
+        course_total = Course.objects.count()
+        required_total = Course.objects.filter(course_type=Course.CourseType.REQUIRED).count()
+        elective_total = max(0, course_total - required_total)
 
         return {
             "courses_total": safe_count(Course.objects.all()),
@@ -78,6 +87,14 @@ def get_admin_dashboard_stats() -> dict:
             "focus_exam_records_forced_zero": safe_count(
                 ExamRecord.objects.filter(focus_forced_zero=True)
             ),
+            "instructors_total": safe_count(Instructor.objects.filter(is_published=True)),
+            "instructors_with_courses": int(instructor_with_courses.count()),
+            "instructor_course_total": int(course_total),
+            "instructor_required_total": int(required_total),
+            "instructor_elective_total": int(elective_total),
+            "instructor_top_name": getattr(instructor_top, "name", "—") if instructor_top else "—",
+            "instructor_top_courses": int(getattr(instructor_top, "course_count", 0) or 0),
+            "instructor_avg_courses": round(course_total / max(1, instructor_with_courses.count()), 1),
         }
     except Exception:
         return zeros.copy()

@@ -1,0 +1,21 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  #changelist table#result_list tbody tr:hover {
+    background: #f8fafc;
+  }
+  #changelist table#result_list tbody td {
+    vertical-align: middle;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  #changelist table#result_list tbody td.field-enabled {
+    text-align: center;
+  }
+  #changelist table#result_list tbody td.field-project {
+    font-weight: 600;
+  }
+</style>
+{% endblock %}

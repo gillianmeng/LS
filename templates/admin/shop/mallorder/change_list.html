@@ -1,0 +1,74 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  #changelist table#result_list tbody tr {
+    background: #fff;
+  }
+  #changelist table#result_list tbody tr:hover {
+    background: #f8fafc;
+  }
+  #changelist table#result_list tbody td {
+    vertical-align: middle;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  #changelist table#result_list tbody td.field-order_overview,
+  #changelist table#result_list tbody td.field-fulfillment_overview,
+  #changelist table#result_list tbody td.field-ops_links {
+    min-width: 180px;
+  }
+  #changelist table#result_list tbody td.field-order_overview strong {
+    font-size: 14px;
+  }
+  #changelist table#result_list tbody td.field-fulfillment_overview span {
+    display: inline-block;
+    margin-right: 8px;
+  }
+  #changelist table#result_list tbody tr.row-completed {
+    opacity: 0.62;
+    background: #f8fafc;
+  }
+  #changelist table#result_list tbody tr.row-completed:hover {
+    background: #f1f5f9;
+  }
+  #changelist table#result_list tbody td.field-ops_links {
+    width: 92px;
+    min-width: 92px;
+    max-width: 92px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  #changelist table#result_list tbody td.field-ops_links .button {
+    width: 100%;
+    display: block;
+    margin-bottom: 4px;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 3px 4px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+  #changelist table#result_list tbody td.field-ops_links .button:last-child {
+    margin-bottom: 0;
+  }
+  #changelist table#result_list tbody td.field-ops_links .button[style*="background:#2563eb"] {
+    background: #2563eb !important;
+    color: #fff !important;
+  }
+  #changelist table#result_list tbody td.field-ops_links .button[style*="background:#dc2626"] {
+    background: #dc2626 !important;
+    color: #fff !important;
+  }
+  #changelist table#result_list tbody td.field-ops_links .button[style*="background:#e5e7eb"] {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    cursor: default !important;
+  }
+  #changelist table#result_list tbody td.field-order_overview,
+  #changelist table#result_list tbody td.field-fulfillment_overview {
+    background: transparent;
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ instructor.name }} — 讲师详情{% endblock %}
+{% block content %}
+<div class="space-y-8">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                {% if instructor.display_avatar_url %}
+                <img src="{{ instructor.display_avatar_url }}" alt="{{ instructor.name }}" class="h-24 w-24 rounded-full object-cover ring-4 ring-slate-100">
+                {% else %}
+                <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 text-3xl font-bold text-slate-700">
+                    {{ instructor.name|slice:":1" }}
+                </div>
+                {% endif %}
+                <div>
+                    <p class="text-sm font-medium text-sky-600">讲师详情</p>
+                    <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ instructor.name }}</h1>
+                    <p class="mt-2 text-sm text-slate-500">{{ instructor.title|default:"讲师" }}</p>
+                    {% if instructor.employee %}
+                    <p class="mt-1 text-xs text-slate-400">关联员工：{{ instructor.employee.real_name }}（{{ instructor.employee.emp_id }}）</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center text-sm">
+                <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p class="text-xs text-slate-500">课程总数</p>
+                    <p class="mt-1 text-xl font-bold text-slate-900">{{ stats.course_total }}</p>
+                </div>
+                <div class="rounded-2xl bg-rose-50 px-4 py-3">
+                    <p class="text-xs text-rose-600">必修</p>
+                    <p class="mt-1 text-xl font-bold text-rose-700">{{ stats.required_count }}</p>
+                </div>
+                <div class="rounded-2xl bg-sky-50 px-4 py-3">
+                    <p class="text-xs text-sky-600">选修</p>
+                    <p class="mt-1 text-xl font-bold text-sky-700">{{ stats.elective_count }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex items-end justify-between gap-3 border-b border-slate-200 pb-2">
+            <h2 class="text-lg font-bold text-slate-900">讲过的课程</h2>
+            <p class="text-sm text-slate-500">共 {{ stats.course_total }} 门</p>
+        </div>
+        {% if course_rows %}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {% for row in course_rows %}
+            <a href="{% url 'courses:course_detail' row.course.pk %}" class="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md">
+                <div class="p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="line-clamp-2 font-semibold text-slate-900">{{ row.course.name }}</h3>
+                        <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ row.level_label }}</span>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">内容形式：{{ row.content_label }}{% if row.reward_points %} · 完成可得 {{ row.reward_points }} 积分{% endif %}</p>
+                    <p class="mt-3 text-sm text-slate-500">{{ row.course.description|default:"暂无简介"|truncatechars:72 }}</p>
+                    <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
+                        <span>{{ row.course.duration_display }}</span>
+                        <span>{{ row.course.created_at|date:"Y-m-d" }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center text-sm text-slate-400">暂无讲师关联课程</p>
+        {% endif %}
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex items-end justify-between gap-3 border-b border-slate-200 pb-2">
+            <h2 class="text-lg font-bold text-slate-900">相关培训 / 认证</h2>
+            <p class="text-sm text-slate-500">共 {{ training_rows|length }} 条</p>
+        </div>
+        {% if training_rows %}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {% for row in training_rows %}
+            <a href="{% url 'shop:training_detail' row.training.pk %}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-sky-200 hover:shadow-md">
+                <h3 class="line-clamp-2 font-semibold text-slate-900">{{ row.training.title }}</h3>
+                <p class="mt-2 text-sm text-slate-500">{{ row.category_label }}</p>
+                <p class="mt-3 text-xs text-slate-400">{% if row.training.location %}{{ row.training.location }} · {% endif %}{% if row.training.start_at %}{{ row.training.start_at|date:"Y-m-d H:i" }}{% else %}时间待定{% endif %}</p>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center text-sm text-slate-400">暂无相关培训或认证记录</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -6,6 +6,63 @@
     <title>{% block title %}球学堂{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      :root {
+        --ls-bg-1: #f7fbff;
+        --ls-bg-2: #fff7fb;
+        --ls-card: rgba(255, 255, 255, 0.9);
+        --ls-card-border: rgba(226, 236, 248, 0.95);
+        --ls-text: #122033;
+        --ls-muted: #64748b;
+      }
+      body {
+        background:
+          radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+          radial-gradient(circle at top right, rgba(236, 72, 153, 0.14), transparent 26%),
+          linear-gradient(180deg, var(--ls-bg-1) 0%, #f5f9ff 42%, var(--ls-bg-2) 100%);
+        color: var(--ls-text);
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(120deg, rgba(255,255,255,0.3), transparent 26%),
+          radial-gradient(circle at 50% 0%, rgba(255,255,255,0.35), transparent 22%);
+        z-index: -1;
+      }
+      main {
+        position: relative;
+      }
+      .page-card {
+        overflow: hidden;
+        border: 1px solid var(--ls-card-border);
+        background: var(--ls-card);
+        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(14px);
+      }
+      .page-card-soft {
+        border: 1px solid rgba(226, 236, 248, 0.8);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+      }
+      .section-title {
+        position: relative;
+        padding-left: 14px;
+      }
+      .section-title::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 4px;
+        height: 18px;
+        border-radius: 999px;
+        transform: translateY(-50%);
+        background: linear-gradient(180deg, #3b82f6, #ec4899);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+      }
       /* 顶栏：悬停 / 点按 统一蓝色电光（与「球学堂」深蓝发光气质一致） */
       .hit-electric {
         transition: box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease,
@@ -48,6 +105,34 @@
           0 0 18px rgba(59, 130, 246, 0.48),
           0 0 32px rgba(37, 99, 235, 0.18),
           inset 0 0 0 1px rgba(147, 197, 253, 0.85);
+      }
+      .nav-pill {
+        position: relative;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .nav-pill::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+      .section-title {
+        position: relative;
+        padding-left: 14px;
+      }
+      .section-title::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 4px;
+        height: 18px;
+        border-radius: 999px;
+        transform: translateY(-50%);
+        background: linear-gradient(180deg, #3b82f6, #ec4899);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
       }
       .hit-electric--outline:hover,
       .hit-electric--outline:focus-visible {
@@ -133,6 +218,251 @@
           0 0 12px rgba(59, 130, 246, 0.22);
         outline: none;
       }
+
+      /* 前台整体视觉：清透、明亮、轻拟物 */
+      body {
+        background:
+          radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 28%),
+          radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 26%),
+          linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+      }
+      main {
+        position: relative;
+      }
+      main::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.9), transparent 22%),
+          radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.72), transparent 18%);
+        opacity: 0.65;
+        z-index: -1;
+      }
+      section {
+        scroll-margin-top: 6rem;
+      }
+      .brand-mark {
+        text-decoration: none;
+      }
+      .brand-mark__icon {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.7rem;
+        height: 2.7rem;
+        border-radius: 1.05rem;
+        background: linear-gradient(180deg, #8fe9ff 0%, #73a4ff 52%, #bb8dff 100%);
+        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.2), 0 0 0 4px rgba(255, 255, 255, 0.84);
+        overflow: visible;
+        cursor: pointer;
+        transform-origin: center;
+      }
+      .brand-mark__snow-outer {
+        position: absolute;
+        inset: 0.24rem;
+        border-radius: 999px;
+        background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.98), rgba(255,255,255,0.78) 58%, rgba(255,255,255,0.55) 100%);
+        box-shadow: inset 0 -4px 8px rgba(79, 70, 229, 0.08);
+      }
+      .brand-mark__snow-scarf {
+        position: absolute;
+        left: 0.46rem;
+        right: 0.56rem;
+        bottom: 0.22rem;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ff5d8f, #ff8aa6);
+        box-shadow: 0 3px 0 rgba(255,255,255,0.55) inset, 0 0 10px rgba(255,93,143,0.28);
+      }
+      .brand-mark__snow-scarf::before {
+        content: "";
+        position: absolute;
+        right: 0.05rem;
+        top: 0.18rem;
+        width: 0.42rem;
+        height: 0.92rem;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #ff8aa6, #ff5d8f);
+        transform: rotate(18deg);
+      }
+      .brand-mark__snow-scarf::after {
+        content: "";
+        position: absolute;
+        left: 0.22rem;
+        top: 0.1rem;
+        width: 0.22rem;
+        height: 0.7rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.3);
+        transform: rotate(12deg);
+      }
+      .brand-mark__snow-branch {
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        width: 1.65rem;
+        height: 0.26rem;
+        margin-left: -0.825rem;
+        margin-top: -0.13rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.98) 18%, rgba(255,255,255,0.98) 82%, rgba(255,255,255,0));
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
+      }
+      .brand-mark__snow-branch::before,
+      .brand-mark__snow-branch::after {
+        content: "";
+        position: absolute;
+        width: 0.44rem;
+        height: 0.24rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.98);
+      }
+      .brand-mark__snow-branch::before { left: 0.08rem; top: -0.28rem; transform: rotate(35deg); }
+      .brand-mark__snow-branch::after { right: 0.08rem; top: 0.23rem; transform: rotate(-35deg); }
+      .brand-mark__snow-branch--a { transform: translate(-50%, -50%) rotate(0deg); }
+      .brand-mark__snow-branch--b { transform: translate(-50%, -50%) rotate(60deg); }
+      .brand-mark__snow-branch--c { transform: translate(-50%, -50%) rotate(120deg); }
+      .brand-mark__snow-branch--d { transform: translate(-50%, -50%) rotate(30deg) scale(0.94); }
+      .brand-mark__snow-branch--e { transform: translate(-50%, -50%) rotate(90deg) scale(0.94); }
+      .brand-mark__snow-branch--f { transform: translate(-50%, -50%) rotate(150deg) scale(0.94); }
+      .brand-mark__snow-eye {
+        position: absolute;
+        top: 0.82rem;
+        width: 0.16rem;
+        height: 0.16rem;
+        border-radius: 999px;
+        background: #2b3a67;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.75);
+      }
+      .brand-mark__snow-eye::after {
+        content: "";
+        position: absolute;
+        inset: -0.08rem;
+        border-radius: 999px;
+        background: rgba(43, 58, 103, 0.15);
+        opacity: 0;
+      }
+      .brand-mark__snow-eye--l { left: 0.86rem; }
+      .brand-mark__snow-eye--r { right: 0.86rem; }
+      .brand-mark__snow-face {
+        position: absolute;
+        left: 50%;
+        top: 1.18rem;
+        width: 0.5rem;
+        height: 0.22rem;
+        margin-left: -0.25rem;
+        border-bottom: 2px solid #2b3a67;
+        border-radius: 0 0 999px 999px;
+      }
+      .brand-mark__snow-cheek {
+        position: absolute;
+        top: 1.08rem;
+        width: 0.26rem;
+        height: 0.16rem;
+        border-radius: 999px;
+        background: rgba(255, 169, 183, 0.9);
+        filter: blur(0.15px);
+      }
+      .brand-mark__snow-cheek--l { left: 0.62rem; }
+      .brand-mark__snow-cheek--r { right: 0.62rem; }
+      .brand-mark__snow-dots {
+        position: absolute;
+        width: 0.22rem;
+        height: 0.22rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.95);
+        box-shadow: 0 0 8px rgba(255,255,255,0.85);
+      }
+      .brand-mark__snow-dots--l { left: 0.42rem; top: 0.38rem; }
+      .brand-mark__snow-dots--r { right: 0.42rem; bottom: 0.38rem; }
+      .brand-mark:hover .brand-mark__icon,
+      .brand-mark:focus-visible .brand-mark__icon {
+        transform: translateY(-1px) rotate(-4deg) scale(1.04);
+        box-shadow: 0 16px 30px rgba(99, 102, 241, 0.28), 0 0 0 4px rgba(255, 255, 255, 0.84);
+      }
+      .brand-mark:hover .brand-mark__snow-branch,
+      .brand-mark:focus-visible .brand-mark__snow-branch {
+        animation: ls-snow-wiggle 0.8s ease-in-out;
+      }
+      .brand-mark:hover .brand-mark__snow-eye,
+      .brand-mark:focus-visible .brand-mark__snow-eye {
+        animation: ls-snow-blink 1.6s ease-in-out 0.15s;
+      }
+      .brand-mark:hover .brand-mark__snow-scarf,
+      .brand-mark:focus-visible .brand-mark__snow-scarf {
+        animation: ls-snow-bounce 0.8s ease-in-out;
+      }
+      .brand-mark:hover .brand-mark__snow-dots,
+      .brand-mark:focus-visible .brand-mark__snow-dots {
+        animation: ls-snow-pop 0.8s ease-out;
+      }
+      .brand-mark:hover .brand-mark__text {
+        letter-spacing: 0.2em;
+      }
+      @keyframes ls-snow-wiggle {
+        0%, 100% { transform-origin: center; }
+        25% { transform: translate(-50%, -50%) rotate(8deg); }
+        50% { transform: translate(-50%, -50%) rotate(-7deg); }
+        75% { transform: translate(-50%, -50%) rotate(4deg); }
+      }
+      @keyframes ls-snow-blink {
+        0%, 20%, 100% { transform: scaleY(1); }
+        10% { transform: scaleY(0.15); }
+      }
+      @keyframes ls-snow-bounce {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-1px) rotate(-2deg); }
+        50% { transform: translateY(1px) rotate(2deg); }
+        75% { transform: translateY(-1px) rotate(-1deg); }
+      }
+      @keyframes ls-snow-pop {
+        0% { transform: scale(0.7); opacity: 0.5; }
+        40% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .page-card,
+      .course-card-surface,
+      .surface-card {
+        border: 1px solid rgba(203, 213, 225, 0.85);
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 10px 30px rgba(71, 98, 146, 0.08);
+        backdrop-filter: blur(8px);
+      }
+      .page-card {
+        border-radius: 1.25rem;
+      }
+      .section-title {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .section-title::before {
+        content: "";
+        width: 0.6rem;
+        height: 1.2rem;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #38bdf8, #6366f1);
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+      }
+      .home-tab {
+        transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+      }
+      .home-tab:hover {
+        transform: translateY(-1px);
+      }
+      footer {
+        color: #64748b;
+      }
+      footer a {
+        transition: color 0.18s ease;
+      }
+      footer a:hover {
+        color: #2563eb;
+      }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -140,26 +470,44 @@
     <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-md">
         <nav class="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-3 lg:grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-6">
             <div class="flex min-w-0 items-center justify-between gap-3 lg:justify-start">
-                <a href="{% url 'home' %}" class="group relative inline-flex select-none items-center py-0.5 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2" aria-label="球学堂首页">
-                    <span class="text-xl font-black leading-none tracking-[0.14em] text-[#0a1628] [text-shadow:0_0_14px_rgba(37,99,235,0.55),0_0_28px_rgba(29,78,216,0.25)] transition-[text-shadow] duration-300 group-hover:[text-shadow:0_0_18px_rgba(37,99,235,0.65),0_0_36px_rgba(29,78,216,0.35)] sm:text-[1.65rem]">球学堂</span>
+                <a href="{% url 'home' %}" class="brand-mark group relative inline-flex select-none items-center gap-2.5 py-0.5 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2" aria-label="球学堂首页">
+                    <span class="brand-mark__icon" aria-hidden="true">
+                        <span class="brand-mark__snow-scarf"></span>
+                        <span class="brand-mark__snow-outer"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--a"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--b"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--c"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--d"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--e"></span>
+                        <span class="brand-mark__snow-branch brand-mark__snow-branch--f"></span>
+                        <span class="brand-mark__snow-face"></span>
+                        <span class="brand-mark__snow-eye brand-mark__snow-eye--l"></span>
+                        <span class="brand-mark__snow-eye brand-mark__snow-eye--r"></span>
+                        <span class="brand-mark__snow-cheek brand-mark__snow-cheek--l"></span>
+                        <span class="brand-mark__snow-cheek brand-mark__snow-cheek--r"></span>
+                        <span class="brand-mark__snow-smile"></span>
+                        <span class="brand-mark__snow-dots brand-mark__snow-dots--l"></span>
+                        <span class="brand-mark__snow-dots brand-mark__snow-dots--r"></span>
+                    </span>
+                    <span class="brand-mark__text text-xl font-black leading-none tracking-[0.18em] text-[#0b1b34] transition-all duration-300 group-hover:text-[#0f2f63] sm:text-[1.65rem]">球学堂</span>
                 </a>
             </div>
             {% with rn=request.resolver_match.url_name %}
             <div class="flex min-w-0 justify-center lg:px-2">
             {% if user.is_authenticated %}
-            <div class="inline-flex max-w-full rounded-full bg-slate-100/95 p-1 shadow-inner ring-1 ring-slate-200/80">
-            <ul class="flex min-w-0 items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="主导航">
+            <div class="inline-flex max-w-full overflow-hidden rounded-full bg-slate-100/95 p-1 shadow-inner ring-1 ring-slate-200/80">
+            <ul class="flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="主导航">
                 <li class="shrink-0">
-                    <a href="{% url 'home' %}" role="tab" aria-selected="{% if rn == 'home' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'home' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">首页</a>
+                    <a href="{% url 'home' %}" role="tab" aria-selected="{% if rn == 'home' %}true{% else %}false{% endif %}" class="nav-pill inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'home' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">首页</a>
                 </li>
                 <li class="shrink-0">
-                    <a href="{% url 'courses:my_learning' %}" role="tab" aria-selected="{% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">知识殿堂</a>
+                    <a href="{% url 'courses:my_learning' %}" role="tab" aria-selected="{% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}true{% else %}false{% endif %}" class="nav-pill inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'my_learning' or rn == 'my_training' or rn == 'my_external' or rn == 'my_projects' or rn == 'my_exams' or rn == 'my_courses' or rn == 'my_applications' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">知识殿堂</a>
                 </li>
                 <li class="shrink-0">
-                    <a href="{% url 'shop:activity_center' %}" role="tab" aria-selected="{% if rn == 'activity_center' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'activity_center' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">活动广场</a>
+                    <a href="{% url 'shop:activity_center' %}" role="tab" aria-selected="{% if rn == 'activity_center' %}true{% else %}false{% endif %}" class="nav-pill inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'activity_center' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">活动广场</a>
                 </li>
                 <li class="shrink-0">
-                    <a href="{% url 'shop:points_mall' %}" role="tab" aria-selected="{% if rn == 'points_mall' %}true{% else %}false{% endif %}" class="inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'points_mall' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">积分商城</a>
+                    <a href="{% url 'shop:points_mall' %}" role="tab" aria-selected="{% if rn == 'points_mall' %}true{% else %}false{% endif %}" class="nav-pill inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium {% if rn == 'points_mall' %}hit-electric--on text-slate-800{% else %}text-slate-600{% endif %} hit-electric hit-electric--pill">积分商城</a>
                 </li>
             </ul>
             </div>

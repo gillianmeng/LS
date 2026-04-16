@@ -1,0 +1,13 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if original %}
+    <li>
+      <a href="{% url 'admin:shop_mallorder_send_pickup_notice' original.pk %}" class="historylink">通知领取（占位）</a>
+    </li>
+    <li>
+      <a href="{% url 'admin:shop_mallorder_mark_completed' original.pk %}" class="historylink">标记已完成</a>
+    </li>
+  {% endif %}
+{% endblock %}

@@ -9,7 +9,7 @@
         <span class="text-slate-800">{{ course.name }}</span>
     </nav>
 
-    <header class="space-y-2">
+    <header class="page-card-soft space-y-3 rounded-[1.5rem] p-5 sm:p-6">
         <h1 class="text-2xl font-bold text-slate-900">{{ course.name }}</h1>
         <p class="flex flex-wrap gap-3 text-sm text-slate-500">
             <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{% if course.content_kind == "article" %}文章{% else %}视频{% endif %}</span>
@@ -18,6 +18,9 @@
             <span>{{ course.view_count }} 次浏览</span>
             {% if course.reward_points %}<span>完成可得 {{ course.reward_points }} 积分</span>{% endif %}
         </p>
+        {% if course_instructor %}
+        <p class="text-sm text-slate-600">主讲讲师：<a href="{% url 'courses:instructor_detail' course_instructor.pk %}" class="font-medium text-sky-600 hover:underline">{{ course_instructor.name }}</a>{% if course_instructor.title %} · {{ course_instructor.title }}{% endif %}</p>
+        {% endif %}
         {% if user.is_authenticated and learning_record %}
         <p class="text-sm text-sky-700">
             学习进度 {{ learning_record.progress_percentage }}%
@@ -71,7 +74,7 @@
 
     {% if course.content_kind == "article" %}
         {% if course.thumbnail or course.cover_url %}
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+        <div class="page-card-soft overflow-hidden rounded-[1.4rem]">
             {% if course.thumbnail %}
             <img src="{{ course.thumbnail.url }}" alt="" class="max-h-80 w-full object-cover object-center">
             {% else %}
@@ -81,7 +84,7 @@
         {% endif %}
 
         {% if course.article_url %}
-        <section class="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-6 shadow-sm">
+        <section class="page-card-soft rounded-[1.4rem] border-sky-200 bg-gradient-to-br from-sky-50 to-white p-6">
             <h2 class="text-base font-semibold text-slate-900">阅读原文</h2>
             <p class="mt-1 text-sm text-slate-600">在新标签页打开下方链接，可保留飞书、语雀、公司文档站等<strong>原有格式与排版</strong>（无需把全文粘贴进本站）。</p>
             <a href="{{ course.article_url }}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
@@ -93,7 +96,7 @@
         {% endif %}
 
         {% if course.article_body %}
-        <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <article class="page-card-soft rounded-[1.4rem] p-6">
             <h2 class="mb-4 text-base font-semibold text-slate-900">{% if course.article_url %}站内补充 / 摘要{% else %}正文{% endif %}</h2>
             <div class="prose prose-slate max-w-none text-slate-800 prose-p:leading-relaxed whitespace-pre-wrap">{{ course.article_body }}</div>
         </article>
@@ -103,7 +106,7 @@
             <div class="prose prose-slate max-w-none text-slate-800 whitespace-pre-wrap">{{ course.description }}</div>
         </article>
         {% elif not course.article_url and not course.article_body and not course.description %}
-        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
+        <div class="page-card-soft rounded-[1.4rem] border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
             请管理员在后台填写<strong>原文链接</strong>或<strong>文章正文</strong>，或填写简介
         </div>
         {% endif %}

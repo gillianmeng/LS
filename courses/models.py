@@ -105,6 +105,15 @@ class Course(models.Model):
         verbose_name="课程目录",
         help_text="选至二级子类，用于首页与全部课程左侧分类筛选。",
     )
+    instructor = models.ForeignKey(
+        "Instructor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
+        verbose_name="讲师",
+        help_text="该课程的主讲老师；前台课程详情与首页讲师页会使用。",
+    )
     required_deadline = models.DateTimeField(
         null=True,
         blank=True,

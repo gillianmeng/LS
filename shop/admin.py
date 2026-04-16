@@ -1,8 +1,14 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.shortcuts import redirect
+from django.urls import path, reverse
+from django.utils import timezone
+from django.utils.html import format_html, mark_safe
 
 from learning_system.admin_mixins import OptionalFileFieldsAdminMixin
 
 from .forms import ShopMallSettingsForm, TrainingAdminForm
+from users.feishu_message import FeishuMessenger
+
 from .models import (
     ExchangeRecord,
     MallOrder,
@@ -104,24 +110,177 @@ class MallShippingAddressAdmin(admin.ModelAdmin):
 @admin.register(MallOrder)
 class MallOrderAdmin(admin.ModelAdmin):
     list_display = (
-        "order_no",
-        "employee",
-        "product_name",
-        "points_spent",
-        "delivery_type",
-        "status",
+        "order_overview",
+        "fulfillment_overview",
+        "ops_links",
         "created_at",
     )
+    list_display_links = ("order_overview",)
     list_filter = ("status", "delivery_type", "created_at")
     search_fields = ("order_no", "product_name", "employee__emp_id", "recipient_phone", "tracking_number")
     raw_id_fields = ("employee", "product")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "pickup_notice_sent_at", "completed_at")
+    actions = ("send_pickup_notice", "mark_orders_completed")
     fieldsets = (
         ("订单", {"fields": ("order_no", "status", "employee", "product", "product_name", "points_spent", "created_at", "updated_at")}),
-        ("领取", {"fields": ("delivery_type", "recipient_name", "recipient_phone", "address_detail", "pickup_location_note")}),
+        ("领取", {"fields": ("delivery_type", "recipient_name", "recipient_phone", "address_detail", "pickup_location_note", "pickup_notice_sent_at", "completed_at")}),
         ("备注", {"fields": ("buyer_remark",)}),
         ("物流（邮寄）", {"fields": ("logistics_company", "tracking_number")}),
     )
+
+    @admin.display(description="订单概览")
+    def order_overview(self, obj):
+        muted = bool(obj.completed_at or obj.status == MallOrder.OrderStatus.COMPLETED)
+        title_color = "#9ca3af" if muted else "#111827"
+        sub_color = "#cbd5e1" if muted else "#6b7280"
+        status_chip = self._status_badge("已结单" if muted else "处理中", "neutral" if muted else "warning")
+        return format_html(
+            '<div style="display:flex; flex-direction:column; gap:6px; line-height:1.25;{}">'
+            '<div style="display:flex; align-items:center; gap:8px;">'
+            '<strong style="font-size:14px; color:{};">{}</strong>'
+            '{}'
+            '</div>'
+            '<span style="color:{}; font-size:12px;">{} · {}</span>'
+            '</div>',
+            " opacity:0.78;" if muted else "",
+            title_color,
+            obj.product_name,
+            status_chip,
+            sub_color,
+            obj.order_no,
+            obj.employee.real_name,
+        )
+
+    @admin.display(description="处理信息")
+    def fulfillment_overview(self, obj):
+        notice = self._status_badge(
+            "已通知" if obj.pickup_notice_sent_at else "待通知",
+            "success" if obj.pickup_notice_sent_at else "muted",
+        )
+        delivery = self._status_badge(
+            "现场领取" if obj.delivery_type == MallOrder.DeliveryType.PICKUP else "快递邮寄",
+            "info",
+        )
+
+        if obj.delivery_type == MallOrder.DeliveryType.PICKUP:
+            delivered_text = "已领取" if (obj.completed_at or obj.status == MallOrder.OrderStatus.COMPLETED) else "待领取"
+            delivered_tone = "success" if delivered_text == "已领取" else "warning"
+        else:
+            shipped_done = (
+                obj.status in (MallOrder.OrderStatus.SHIPPED, MallOrder.OrderStatus.COMPLETED)
+                or bool((obj.logistics_company or "").strip())
+                or bool((obj.tracking_number or "").strip())
+            )
+            delivered_text = "已邮寄" if shipped_done else "待邮寄"
+            delivered_tone = "success" if shipped_done else "warning"
+
+        delivered = self._status_badge(delivered_text, delivered_tone)
+
+        return format_html(
+            '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; max-width:360px;">{}{}{} </div>',
+            notice,
+            delivery,
+            delivered,
+        )
+
+    def _status_badge(self, text, tone):
+        palette = {
+            "success": "background:#ecfdf5;color:#047857;border-color:#a7f3d0;",
+            "warning": "background:#fffbeb;color:#b45309;border-color:#fde68a;",
+            "info": "background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;",
+            "neutral": "background:#f8fafc;color:#475569;border-color:#e2e8f0;",
+            "muted": "background:#f9fafb;color:#6b7280;border-color:#e5e7eb;",
+        }
+        style = palette.get(tone, palette["neutral"])
+        return format_html(
+            '<span style="display:inline-flex; align-items:center; padding:3px 9px; border:1px solid; border-radius:999px; font-size:12px; line-height:1; white-space:nowrap; {}">{}</span>',
+            style,
+            text,
+        )
+
+    def ops_links(self, obj):
+        if not obj.pk:
+            return "—"
+        if obj.completed_at or obj.status == MallOrder.OrderStatus.COMPLETED:
+            return mark_safe(
+                '<div style="display:flex; flex-direction:column; gap:6px; width:74px;">'
+                '<span class="button" style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:3px 4px; line-height:1.1; font-size:12px; white-space:nowrap; background:#e5e7eb; color:#6b7280; border-color:#d1d5db; cursor:default;">已结单</span>'
+                '</div>'
+            )
+        return format_html(
+            '<div style="display:flex; flex-direction:column; gap:6px; width:74px;">'
+            '<a class="button" style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:3px 4px; line-height:1.1; font-size:12px; white-space:nowrap; background:#2563eb; color:#ffffff; border-color:#1d4ed8; box-shadow:none;" href="{}">通知领取</a>'
+            '<a class="button" style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:3px 4px; line-height:1.1; font-size:12px; white-space:nowrap; background:#dc2626; color:#ffffff; border-color:#b91c1c; box-shadow:none;" href="{}">结单</a>'
+            '</div>',
+            reverse("admin:shop_mallorder_send_pickup_notice", args=[obj.pk]),
+            reverse("admin:shop_mallorder_mark_completed", args=[obj.pk]),
+        )
+
+    ops_links.short_description = "操作"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<path:object_id>/send-pickup-notice/",
+                self.admin_site.admin_view(self.send_pickup_notice_view),
+                name="shop_mallorder_send_pickup_notice",
+            ),
+            path(
+                "<path:object_id>/mark-completed/",
+                self.admin_site.admin_view(self.mark_completed_view),
+                name="shop_mallorder_mark_completed",
+            ),
+        ]
+        return custom + urls
+
+    def send_pickup_notice_view(self, request, object_id):
+        order = self.get_object(request, object_id)
+        if not order:
+            self.message_user(request, "订单不存在。", level=messages.ERROR)
+            return redirect("admin:shop_mallorder_changelist")
+
+        messenger = FeishuMessenger()
+        receiver = getattr(order.employee, "feishu_open_id", "") or ""
+        text = (
+            f"【积分商城】你有一笔订单需要领取\n"
+            f"订单号：{order.order_no}\n"
+            f"商品：{order.product_name}\n"
+            f"领取方式：{order.get_delivery_type_display()}\n"
+            f"状态：{order.get_status_display()}\n"
+        )
+        try:
+            if receiver:
+                messenger.send_text_to_user(receiver, text)
+            if not order.pickup_notice_sent_at:
+                order.pickup_notice_sent_at = timezone.now()
+                order.save(update_fields=["pickup_notice_sent_at", "updated_at"])
+            self.message_user(request, "已发送飞书通知领取消息。", level=messages.SUCCESS)
+        except Exception as exc:
+            self.message_user(request, f"飞书消息发送失败：{exc}", level=messages.ERROR)
+        return redirect(request.META.get("HTTP_REFERER") or reverse("admin:shop_mallorder_change", args=[order.pk]))
+
+    def mark_completed_view(self, request, object_id):
+        order = self.get_object(request, object_id)
+        if not order:
+            self.message_user(request, "订单不存在。", level=messages.ERROR)
+            return redirect("admin:shop_mallorder_changelist")
+        if order.status != MallOrder.OrderStatus.COMPLETED or not order.completed_at:
+            order.status = MallOrder.OrderStatus.COMPLETED
+            order.completed_at = timezone.now()
+            order.save(update_fields=["status", "completed_at", "updated_at"])
+        self.message_user(request, "订单已完成。", level=messages.SUCCESS)
+        return redirect(request.META.get("HTTP_REFERER") or reverse("admin:shop_mallorder_change", args=[order.pk]))
+
+    @admin.action(description="通知领取（占位：后续接飞书）")
+    def send_pickup_notice(self, request, queryset):
+        updated = queryset.filter(pickup_notice_sent_at__isnull=True).update(pickup_notice_sent_at=timezone.now())
+        self.message_user(request, f"已标记 {updated} 个订单为已通知领取；飞书通知后续接入。", level=messages.INFO)
+
+    @admin.action(description="标记已完成")
+    def mark_orders_completed(self, request, queryset):
+        updated = queryset.exclude(completed_at__isnull=False).update(completed_at=timezone.now(), status=MallOrder.OrderStatus.COMPLETED)
+        self.message_user(request, f"已完成 {updated} 个订单。", level=messages.SUCCESS)
 
 
 @admin.register(ExchangeRecord)

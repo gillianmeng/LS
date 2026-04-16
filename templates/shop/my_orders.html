@@ -31,6 +31,10 @@
                     <p class="font-medium text-slate-900">{{ o.product_name }}</p>
                     <p class="mt-1 text-sm text-orange-600">{{ o.points_spent }} 积分</p>
                     <p class="mt-1 text-xs text-slate-500">{{ o.get_delivery_type_display }}</p>
+                    <div class="mt-2 flex flex-wrap gap-2 text-[11px]">
+                        {% if o.pickup_notice_sent_at %}<span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">已通知领取</span>{% else %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">待通知领取</span>{% endif %}
+                        {% if o.completed_at %}<span class="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">已完成</span>{% else %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">未完成</span>{% endif %}
+                    </div>
                 </div>
                 <span class="text-sm text-sky-600">详情 →</span>
             </div>

@@ -1,5 +1,12 @@
 /* 两区域后台：首页仅左导航 + 右工作区（上功能、下报表） */
 
+body.dashboard {
+  background:
+    radial-gradient(circle at top left, rgba(55, 182, 255, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 107, 138, 0.12), transparent 24%),
+    linear-gradient(180deg, #fffafc 0%, #f5f8ff 100%);
+}
+
 body.dashboard #content {
   max-width: none;
   width: auto !important;
@@ -20,28 +27,57 @@ body.dashboard #content-main.ls-dash-wrap {
   box-sizing: border-box;
 }
 
-/* 左侧只保留全功能导航（浅色模式） */
-html[data-theme="light"] body.dashboard #nav-sidebar {
-  background: linear-gradient(180deg, #f4f7fc 0%, #edf2fb 100%);
-  border-right: 1px solid #d9e3f4;
+body.dashboard #nav-sidebar {
+  background: linear-gradient(180deg, #f8fbff 0%, #fff4f7 100%);
+  border-right: 1px solid #dce8f7;
 }
 
-/* 右侧主工作区 */
+html[data-theme="dark"] body.dashboard #nav-sidebar {
+  background: #f8fbff !important;
+  border-right: 1px solid #dce8f7 !important;
+}
+
+body.dashboard #nav-sidebar .ls-nav-brand,
+body.dashboard #nav-sidebar .ls-nav-group,
+body.dashboard #nav-sidebar .ls-nav-subgroup {
+  background: #fff;
+}
+
+body.dashboard #nav-sidebar .ls-nav-group h3,
+body.dashboard #nav-sidebar .ls-nav-subgroup h4,
+body.dashboard #nav-sidebar .ls-nav-links a {
+  color: #334155;
+}
+
+body.dashboard #nav-sidebar .ls-nav-links a.is-active {
+  background: linear-gradient(135deg, rgba(55, 182, 255, 0.18), rgba(255, 107, 138, 0.18));
+  color: #0f5bd7;
+}
+
 .ls-right-workspace {
   display: grid;
   gap: 14px;
-  background: #f6f8fc;
-  border: 1px solid #e2e8f5;
-  border-radius: 12px;
-  padding: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .ls-shortcut-panel,
 .ls-report-panel {
-  border: 1px solid #e2e8f5;
-  border-radius: 10px;
+  border: 1px solid #dbe6f7;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(80, 115, 165, 0.08);
+}
+
+.ls-chart-canvas {
+  min-height: 320px;
+}
+
+.ls-chart-card {
   background: #fff;
-  padding: 12px;
 }
 
 .ls-panel-title-row {
@@ -59,162 +95,255 @@ html[data-theme="light"] body.dashboard #nav-sidebar {
 }
 
 .ls-shortcut-plus {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  border: 1px solid #c7d6f3;
-  background: #edf4ff;
-  color: #1d4ed8;
+  border: 0;
+  background: linear-gradient(135deg, #ff6b8a, #ff8bb1);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(255, 107, 138, 0.28);
+}
+
+.ls-shortcut-plus:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.ls-shortcut-tip {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ls-shortcut-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ls-shortcut-modal.is-open {
+  display: flex;
+}
+
+.ls-shortcut-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.ls-shortcut-modal__dialog {
+  position: relative;
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(720px, calc(100vh - 32px));
+  overflow: auto;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.25);
+  border: 1px solid #dbe6f7;
+  padding: 16px;
+}
+
+.ls-shortcut-modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ls-shortcut-modal__head h3 {
+  margin: 0;
   font-size: 18px;
+}
+
+.ls-shortcut-modal__close {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #d2dff1;
+  background: #f8fbff;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
 
-.ls-shortcut-plus:hover {
-  background: #dfeafe;
-  border-color: #9fbaf1;
+.ls-shortcut-picker-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ls-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f5;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.ls-picker-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.ls-picker-row__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-picker-row__text strong {
+  font-size: 14px;
+}
+
+.ls-picker-row__text small {
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.ls-shortcut-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ls-shortcut-modal__btn {
+  min-width: 88px;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2f7cff, #ff6b8a);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ls-shortcut-modal__btn--ghost {
+  background: #f1f5f9;
+  color: #334155;
 }
 
 .ls-panel-title-row h2 {
   margin: 0;
   font-size: 16px;
+  color: #24324a;
 }
 
 .ls-panel-title-row--with-tabs {
   align-items: center;
 }
 
-/* 右上角 +/- 控制 */
-.ls-shortcut-actions {
+.ls-time-tabs {
   display: inline-flex;
-  gap: 8px;
+  gap: 6px;
 }
 
-.ls-shortcut-actions button {
-  width: 30px;
+.ls-time-tabs a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
   height: 30px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid #c9d7f2;
-  background: #f7faff;
-  color: #2a57c8;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0;
-  cursor: pointer;
+  border: 1px solid #d6deea;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  color: #526173;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: all .18s ease;
 }
 
-.ls-shortcut-actions button:hover {
-  border-color: #9cb8f1;
-  background: #eaf1ff;
+.ls-time-tabs a:hover {
+  border-color: #9fb5d8;
+  color: #2f4567;
+  box-shadow: 0 2px 8px rgba(71, 98, 146, 0.1);
 }
 
-/* 常用功能：固定上下两排，每排 4 个按钮（共 8 个） */
+.ls-time-tabs a.is-active {
+  color: #2f64e5;
+  border-color: #8fb2ff;
+  background: linear-gradient(180deg, #edf4ff 0%, #dfeaff 100%);
+  box-shadow: inset 0 0 0 1px #bfd2ff;
+}
+
 .ls-shortcut-stack {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .ls-shortcut-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  min-height: 74px;
+  padding: 14px 16px;
+  border: 1px solid #e7edf7;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   text-decoration: none;
-  color: #16386d;
-  border: 1px solid #dce7fc;
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #f8fbff 0%, #edf4ff 100%);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  color: #334155;
+  box-sizing: border-box;
+  cursor: grab;
+  box-shadow: 0 6px 16px rgba(71, 98, 146, 0.06);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
 .ls-shortcut-item:hover {
+  border-color: #9db8ea;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.1);
   transform: translateY(-1px);
-  border-color: #aec7fb;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.14);
 }
 
 .ls-shortcut-item__left {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
 .ls-shortcut-item__drag {
   width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 1px solid #cbd9f5;
-  background: #eef4ff;
-  color: #5f7fbe;
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
-  cursor: grab;
-  user-select: none;
-  flex: 0 0 20px;
+  color: #c4cfdd;
+  font-size: 15px;
+  line-height: 1;
 }
 
 .ls-shortcut-item__text {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
 .ls-shortcut-item__text strong {
-  display: block;
-  font-size: 14px;
-  color: #1e3a72;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 15px;
+  line-height: 1.25;
+  color: #2d3c53;
 }
 
 .ls-shortcut-item__text small {
-  display: block;
-  color: #64748b;
+  margin-top: 4px;
   font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #7a8798;
+  line-height: 1.25;
 }
 
 .ls-shortcut-item__arrow {
-  color: #8aa4dc;
-  font-size: 16px;
-}
-
-.ls-shortcut-item.is-dragging {
-  opacity: 0.55;
-}
-
-.ls-shortcut-item.is-drop-target {
-  border-color: #7aa4f5;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.16);
-}
-
-/* 报表区域 */
-.ls-time-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.ls-time-tabs a {
-  font-size: 12px;
-  text-decoration: none;
-  color: #5d6b88;
-  border: 1px solid #d8e1f2;
-  border-radius: 6px;
-  padding: 4px 10px;
-  background: #fff;
-}
-
-.ls-time-tabs a.is-active,
-.ls-time-tabs a:hover {
-  color: #275bd3;
-  border-color: #b9cdfc;
-  background: #edf3ff;
+  color: #c4cfdd;
+  font-size: 18px;
 }
 
 .ls-kpi-grid {
@@ -227,12 +356,11 @@ html[data-theme="light"] body.dashboard #nav-sidebar {
 .ls-kpi-card {
   position: relative;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 18px;
   padding: 12px;
   color: #fff;
   border: 0;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
 }
 
 .ls-kpi-card::before {
@@ -253,11 +381,6 @@ html[data-theme="light"] body.dashboard #nav-sidebar {
   inset: 0;
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 42%);
   pointer-events: none;
-}
-
-.ls-kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.22);
 }
 
 .ls-kpi-card:hover::before {
@@ -286,406 +409,46 @@ html[data-theme="light"] body.dashboard #nav-sidebar {
   line-height: 1;
   color: #fff;
   font-weight: 800;
+  position: relative;
+  z-index: 1;
 }
 
 .ls-chart-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .ls-chart-card {
-  position: relative;
-  border: 1px solid #e5eaf4;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 10px;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e2e8f5;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
 }
 
 .ls-chart-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
 
-.ls-chart-card h3 {
+.ls-chart-head h3 {
   margin: 0;
-  font-size: 15px;
-  color: #1f2a44;
-  font-weight: 700;
+  font-size: 14px;
 }
 
 .ls-chart-download {
-  border: 1px solid #c7d4ef;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #edf3ff 100%);
-  color: #334155;
-  font-size: 12px;
-  font-weight: 600;
+  border: 0;
+  background: linear-gradient(135deg, #37b6ff, #8b7bff);
+  color: #fff;
+  border-radius: 999px;
   padding: 6px 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  box-shadow: 0 8px 16px rgba(55, 182, 255, 0.18);
 }
 
 .ls-chart-download:hover {
-  color: #1d4ed8;
-  border-color: #a7bff0;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.18);
-  transform: translateY(-1px);
-}
-
-.ls-chart-canvas {
-  height: 280px;
-  border: 1px solid #eef2f7;
-  border-radius: 10px;
-  background: #fff;
-  position: relative;
-}
-
-.ls-chart-canvas.is-loading::after,
-.ls-chart-canvas.is-empty::after {
-  content: attr(data-tip);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.78);
-  border-radius: 10px;
-  z-index: 2;
-}
-
-.ls-chart-grid--single {
-  grid-template-columns: 1fr;
-}
-
-.ls-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.ls-summary-card {
-  border: 1px solid #e3ebfa;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.ls-summary-card h3 {
-  margin: 0 0 8px;
-  font-size: 15px;
-}
-
-.ls-summary-card dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  row-gap: 8px;
-}
-
-.ls-summary-card dt {
-  color: #6f7d97;
-  font-size: 13px;
-}
-
-.ls-summary-card dd {
-  margin: 0;
-  font-weight: 700;
-  color: #2d3c59;
-}
-
-/* 关闭 Django 默认右栏，避免空白区 */
-#content-related {
-  display: none !important;
-}
-
-body.dashboard #content-main,
-body.dashboard #content-main + #content-related,
-body.dashboard #content-related {
-  max-width: none !important;
-}
-
-/* Dark mode（更高级的一致性适配） */
-html[data-theme="dark"] .ls-right-workspace,
-html[data-theme="dark"] .ls-shortcut-panel,
-html[data-theme="dark"] .ls-report-panel,
-html[data-theme="dark"] .ls-chart-card,
-html[data-theme="dark"] .ls-summary-card {
-  background: linear-gradient(180deg, #0f172a 0%, #111d34 100%);
-  border-color: #243246;
-  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.35);
-}
-
-html[data-theme="dark"] .ls-chart-canvas {
-  background: radial-gradient(120% 120% at 0% 0%, rgba(59, 130, 246, 0.16) 0%, rgba(59, 130, 246, 0) 45%), #0f172a;
-  border-color: #243246;
-}
-
-html[data-theme="dark"] .ls-chart-canvas.is-loading::after,
-html[data-theme="dark"] .ls-chart-canvas.is-empty::after {
-  color: #94a3b8;
-  background: rgba(15, 23, 42, 0.78);
-}
-
-html[data-theme="dark"] .ls-panel-title-row h2,
-html[data-theme="dark"] .ls-chart-card h3,
-html[data-theme="dark"] .ls-summary-card h3,
-html[data-theme="dark"] .ls-summary-card dd,
-html[data-theme="dark"] .ls-shortcut-tip {
-  color: #e2e8f0;
-}
-
-html[data-theme="dark"] .ls-summary-card dt,
-html[data-theme="dark"] .ls-time-tabs a,
-html[data-theme="dark"] .ls-chart-download {
-  color: #94a3b8;
-}
-
-html[data-theme="dark"] .ls-shortcut-plus {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border-color: #334155;
-  color: #bfdbfe;
-}
-
-html[data-theme="dark"] .ls-shortcut-plus:hover {
-  background: #1e3a5f;
-  border-color: #3b82f6;
-  color: #dbeafe;
-}
-
-html[data-theme="dark"] .ls-shortcut-item {
-  color: #cbd5e1;
-  border-color: #2f3f57;
-  background: linear-gradient(135deg, #1b263b 0%, #162235 100%);
-  box-shadow: 0 6px 14px rgba(2, 6, 23, 0.35);
-}
-
-html[data-theme="dark"] .ls-shortcut-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 12px 22px rgba(30, 64, 175, 0.25);
-}
-
-html[data-theme="dark"] .ls-shortcut-item__drag {
-  border-color: #334155;
-  background: #0f172a;
-  color: #93c5fd;
-}
-
-html[data-theme="dark"] .ls-shortcut-item__text strong {
-  color: #e2e8f0;
-}
-
-html[data-theme="dark"] .ls-shortcut-item__text small,
-html[data-theme="dark"] .ls-shortcut-item__arrow {
-  color: #94a3b8;
-}
-
-html[data-theme="dark"] .ls-time-tabs a {
-  background: #0f172a;
-  border-color: #334155;
-}
-
-html[data-theme="dark"] .ls-time-tabs a.is-active,
-html[data-theme="dark"] .ls-time-tabs a:hover {
-  background: #1e3a5f;
-  border-color: #3b82f6;
-  color: #bfdbfe;
-}
-
-html[data-theme="dark"] .ls-chart-download {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border-color: #334155;
-}
-
-/* 强制修正：暗色下顶栏标题与左侧导航可读性 */
-html[data-theme="dark"] #header {
-  background: #0b1323 !important;
-  border-bottom: 1px solid #243244 !important;
-}
-
-html[data-theme="dark"] #site-name,
-html[data-theme="dark"] #site-name a,
-html[data-theme="dark"] #branding h1,
-html[data-theme="dark"] #branding h1 a {
-  color: #f8fbff !important;
-  opacity: 1 !important;
-  font-weight: 900 !important;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 0 12px rgba(59, 130, 246, 0.35) !important;
-}
-
-html[data-theme="dark"] #user-tools,
-html[data-theme="dark"] #user-tools a,
-html[data-theme="dark"] #user-tools button {
-  color: #dbe7ff !important;
-}
-
-html[data-theme="dark"] body.dashboard #nav-sidebar {
-  background: linear-gradient(180deg, #111b2f 0%, #0f172a 100%) !important;
-  border-right: 1px solid #243244 !important;
-}
-
-html[data-theme="dark"] body.dashboard #nav-sidebar,
-html[data-theme="dark"] body.dashboard #nav-sidebar * {
-  box-sizing: border-box;
-}
-
-/* 清理左侧异常白块（Django app_list table 默认背景） */
-html[data-theme="dark"] body.dashboard #nav-sidebar .module,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module table,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module tbody,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module tr,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module td,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module th,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module caption {
-  background: transparent !important;
-  border-color: #243244 !important;
-}
-
-html[data-theme="dark"] body.dashboard #nav-sidebar .ls-nav-brand,
-html[data-theme="dark"] body.dashboard #nav-sidebar .ls-nav-models-caption,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module caption a.section,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module th a,
-html[data-theme="dark"] body.dashboard #nav-sidebar .module td a,
-html[data-theme="dark"] body.dashboard #nav-sidebar #nav-filter,
-html[data-theme="dark"] body.dashboard #nav-sidebar #nav-filter::placeholder {
-  color: #dbe7ff !important;
-}
-
-html[data-theme="dark"] body.dashboard #nav-sidebar #nav-filter {
-  background: #0b1220 !important;
-  border: 1px solid #334155 !important;
-}
-
-html[data-theme="dark"] body.dashboard #nav-sidebar .module tr:hover {
-  background: rgba(30, 41, 59, 0.72) !important;
-}
-
-@media (max-width: 1600px) {
-  .ls-kpi-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
-
-/* 选择器弹窗 */
-.ls-shortcut-modal {
-  display: none;
-}
-
-.ls-shortcut-modal.is-open {
-  display: block;
-}
-
-.ls-shortcut-modal__mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.38);
-  z-index: 1200;
-}
-
-.ls-shortcut-modal__panel {
-  position: fixed;
-  z-index: 1201;
-  top: 50%;
-  left: 50%;
-  width: min(640px, calc(100vw - 32px));
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border: 1px solid #dce6f9;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
-}
-
-.ls-shortcut-modal__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  border-bottom: 1px solid #e5ecfa;
-}
-
-.ls-shortcut-modal__head h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.ls-shortcut-modal__close {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #d6e1f7;
-  border-radius: 8px;
-  background: #f6f9ff;
-  cursor: pointer;
-}
-
-.ls-shortcut-picker-list {
-  max-height: 360px;
-  overflow: auto;
-  padding: 10px 12px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.ls-picker-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  border: 1px solid #e4ecfb;
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: #fbfdff;
-}
-
-.ls-picker-row__text strong {
-  display: block;
-  font-size: 13px;
-  color: #1f3768;
-}
-
-.ls-picker-row__text small {
-  display: block;
-  font-size: 12px;
-  color: #6b7e9f;
-}
-
-.ls-shortcut-modal__foot {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 14px;
-  border-top: 1px solid #e5ecfa;
-}
-
-.ls-btn {
-  border-radius: 8px;
-  padding: 6px 12px;
-  border: 1px solid #d5e0f6;
-  cursor: pointer;
-}
-
-.ls-btn--ghost {
-  background: #fff;
-}
-
-.ls-btn--primary {
-  background: #2563eb;
-  color: #fff;
-  border-color: #2563eb;
-}
-
-@media (max-width: 1280px) {
-  .ls-chart-grid,
-  .ls-summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ls-shortcut-picker-list {
-    grid-template-columns: 1fr;
-  }
+  filter: brightness(1.04);
 }

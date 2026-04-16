@@ -228,6 +228,18 @@ class MallOrder(models.Model):
 
     logistics_company = models.CharField(max_length=100, blank=True, verbose_name="物流公司")
     tracking_number = models.CharField(max_length=100, blank=True, verbose_name="运单号")
+    pickup_notice_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="领取通知时间",
+        help_text="占位字段：后台点击通知领取后自动写入；后续可接飞书消息/机器人。",
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="完成时间",
+        help_text="勾选订单完成后自动写入，便于追踪处理进度。",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="下单时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")

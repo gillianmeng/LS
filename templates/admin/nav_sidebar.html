@@ -1,11 +1,119 @@
 {% load i18n %}
 <button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
-  <div class="ls-nav-brand">功能导航</div>
+  <div class="ls-nav-brand"></div>
 
-  <div class="ls-nav-models-caption">全部功能（按应用与模型）</div>
-  <input type="search" id="nav-filter"
-         placeholder="{% translate 'Start typing to filter…' %}"
-         aria-label="{% translate 'Filter navigation items' %}">
-  {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
+  <div class="ls-nav-groups">
+    <section class="ls-nav-group">
+      <h3>基础设置</h3>
+      <div class="ls-nav-subgroup">
+        <h4>企业</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:users_employee_changelist' %}">企业信息 / 员工</a></li>
+          <li><a href="{% url 'admin:auth_group_changelist' %}">组</a></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>设置</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:users_notification_changelist' %}">站内通知</a></li>
+          <li><a href="{% url 'admin:users_sitebannerconfig_changelist' %}">页面设置</a></li>
+          <li><a href="{% url 'admin:users_leaderboardconfig_changelist' %}">积分榜显示设置</a></li>
+          <li><a href="{% url 'admin:courses_instructor_changelist' %}">讲师</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ls-nav-group">
+      <h3>商品与积分</h3>
+      <div class="ls-nav-subgroup">
+        <h4>积分</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:shop_shopmallsettings_changelist' %}">积分商城规则与说明</a></li>
+          <li><a href="{% url 'admin:users_leaderboardconfig_changelist' %}">积分榜显示设置</a></li>
+          <li><a href="{% url 'admin:shop_pointsledger_changelist' %}">学习积分流水</a></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>商品</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:shop_product_changelist' %}">商品</a></li>
+          <li><a href="{% url 'admin:shop_mallorder_changelist' %}">商城订单</a></li>
+          <li><a href="{% url 'admin:shop_exchangerecord_changelist' %}">兑换记录</a></li>
+          <li><a href="{% url 'admin:shop_mallshippingaddress_changelist' %}">积分商城收货地址</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ls-nav-group">
+      <h3>项目</h3>
+      <div class="ls-nav-subgroup">
+        <h4>项目目录</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:users_project_changelist' %}">项目目录</a></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>项目管理</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:users_projectmodule_changelist' %}">项目管理</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ls-nav-group">
+      <h3>模块</h3>
+      <div class="ls-nav-subgroup">
+        <h4>培训</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:shop_training_changelist' %}">培训目录</a></li>
+          <li><a href="{% url 'admin:shop_trainingregistration_changelist' %}">培训报名</a></li>
+          <li><span class="ls-nav-disabled">培训问卷<span class="ls-nav-badge">未上线</span></span></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>课程</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:courses_course_changelist' %}">课程目录</a></li>
+          <li><span class="ls-nav-disabled">课程报名<span class="ls-nav-badge">未上线</span></span></li>
+          <li><a href="{% url 'admin:courses_learningrecord_changelist' %}">学习记录</a></li>
+          <li><a href="{% url 'admin:courses_learningpreference_changelist' %}">学习提醒与完课设置</a></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>考试</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:courses_exam_changelist' %}">考试目录</a></li>
+          <li><a href="{% url 'admin:courses_examfocussession_changelist' %}">考试报名</a></li>
+          <li><span class="ls-nav-disabled">考试批改<span class="ls-nav-badge">未上线</span></span></li>
+          <li><a href="{% url 'admin:courses_examrecord_changelist' %}">考试成绩</a></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>作业</h4>
+        <ul class="ls-nav-links">
+          <li><span class="ls-nav-disabled">作业目录<span class="ls-nav-badge">未上线</span></span></li>
+          <li><span class="ls-nav-disabled">作业设置<span class="ls-nav-badge">未上线</span></span></li>
+          <li><span class="ls-nav-disabled">作业批改<span class="ls-nav-badge">未上线</span></span></li>
+          <li><span class="ls-nav-disabled">作业成绩<span class="ls-nav-badge">未上线</span></span></li>
+        </ul>
+      </div>
+      <div class="ls-nav-subgroup">
+        <h4>活动</h4>
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:shop_training_changelist' %}">活动目录</a></li>
+          <li><a href="{% url 'admin:shop_trainingregistration_changelist' %}">活动报名</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ls-nav-group">
+      <h3>防作弊</h3>
+      <div class="ls-nav-subgroup">
+        <ul class="ls-nav-links">
+          <li><a href="{% url 'admin:courses_coursefocusaccum_changelist' %}">切屏统计</a></li>
+        </ul>
+      </div>
+    </section>
+  </div>
 </nav>

@@ -187,7 +187,7 @@ def admin_dashboard_chart_data(request):
     if not request.user.is_staff:
         return JsonResponse({"detail": "forbidden"}, status=403)
 
-    from courses.models import ExamRecord, LearningRecord
+    from courses.models import Course, ExamRecord, Instructor, LearningRecord
     from shop.models import TrainingRegistration
     from users.models import Employee
 
@@ -225,19 +225,23 @@ def admin_dashboard_chart_data(request):
         range_key = "month"
 
     axis_days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
-    learning_counts = {d: 0 for d in axis_days}
+    # 口径说明：
+    # - 活跃人数：按登录（Employee.last_login）去重统计
+    # - 学习人数：按学习行为（LearningRecord.updated_at）去重统计
+    # - 活跃时长 / 学习时长：暂无会话明细时采用人数驱动的估算值（用于趋势展示）
+    learning_people_counts = {d: 0 for d in axis_days}
     exam_counts = {d: 0 for d in axis_days}
     active_people_counts = {d: 0 for d in axis_days}
 
-    learning_rows = (
+    learning_people_rows = (
         LearningRecord.objects.filter(updated_at__date__gte=start, updated_at__date__lte=end)
         .values("updated_at__date")
-        .annotate(c=Count("id"))
+        .annotate(c=Count("employee", distinct=True))
     )
-    for row in learning_rows:
+    for row in learning_people_rows:
         d = row["updated_at__date"]
-        if d in learning_counts:
-            learning_counts[d] = row["c"]
+        if d in learning_people_counts:
+            learning_people_counts[d] = row["c"]
 
     exam_rows = (
         ExamRecord.objects.filter(submitted_at__date__gte=start, submitted_at__date__lte=end)
@@ -250,12 +254,12 @@ def admin_dashboard_chart_data(request):
             exam_counts[d] = row["c"]
 
     active_people_rows = (
-        LearningRecord.objects.filter(updated_at__date__gte=start, updated_at__date__lte=end)
-        .values("updated_at__date")
-        .annotate(c=Count("employee", distinct=True))
+        Employee.objects.filter(last_login__isnull=False, last_login__date__gte=start, last_login__date__lte=end)
+        .values("last_login__date")
+        .annotate(c=Count("id", distinct=True))
     )
     for row in active_people_rows:
-        d = row["updated_at__date"]
+        d = row["last_login__date"]
         if d in active_people_counts:
             active_people_counts[d] = row["c"]
 
@@ -276,8 +280,20 @@ def admin_dashboard_chart_data(request):
     learning_completed = LearningRecord.objects.filter(is_completed=True).count()
     exam_total = ExamRecord.objects.count()
 
+    login_active_total = Employee.objects.filter(last_login__isnull=False).count()
+
+    instructor_qs = Instructor.objects.annotate(course_count=Count("courses", distinct=True))
+    instructor_with_courses = instructor_qs.filter(course_count__gt=0)
+    instructor_top = instructor_with_courses.order_by("-course_count", "sort_order", "id").first()
+    instructor_ordered = list(instructor_with_courses.order_by("-course_count", "sort_order", "id")[:10])
+    instructor_bar_labels = [i.name for i in instructor_ordered]
+    instructor_bar_values = [int(i.course_count or 0) for i in instructor_ordered]
+
+    course_required = Course.objects.filter(course_type=Course.CourseType.REQUIRED).count()
+    course_elective = Course.objects.filter(course_type=Course.CourseType.ELECTIVE).count()
+
     radar_indicator = [
-        {"name": "员工活跃", "max": max(10, employee_total)},
+        {"name": "登录活跃", "max": max(10, employee_total)},
         {"name": "课程学习", "max": max(10, learning_total)},
         {"name": "考试参与", "max": max(10, exam_total)},
         {"name": "培训报名", "max": max(10, training_regs)},
@@ -291,13 +307,13 @@ def admin_dashboard_chart_data(request):
                 "labels": labels,
                 "dates": dates,
                 "active_people": [active_people_counts[d] for d in axis_days],
-                "learning_people": [learning_counts[d] for d in axis_days],
+                "learning_people": [learning_people_counts[d] for d in axis_days],
             },
             "line_hours": {
                 "labels": labels,
                 "dates": dates,
                 "active_hours": [round(active_people_counts[d] * 0.8, 1) for d in axis_days],
-                "learning_hours": [round(learning_counts[d] * 0.6, 1) for d in axis_days],
+                "learning_hours": [round(learning_people_counts[d] * 0.6, 1) for d in axis_days],
             },
             "pie": {
                 "data": [
@@ -308,12 +324,31 @@ def admin_dashboard_chart_data(request):
             "radar": {
                 "indicator": radar_indicator,
                 "value": [
-                    employee_active,
+                    login_active_total,
                     learning_total,
                     exam_total,
                     training_regs,
                     learning_completed,
                 ],
+            },
+            "instructor_bar": {
+                "labels": instructor_bar_labels,
+                "values": instructor_bar_values,
+            },
+            "instructor_pie": {
+                "data": [
+                    {"name": "必修", "value": course_required},
+                    {"name": "选修", "value": course_elective},
+                ]
+            },
+            "instructor_summary": {
+                "total": int(instructor_qs.count()),
+                "with_courses": int(instructor_with_courses.count()),
+                "course_total": course_required + course_elective,
+                "required_total": course_required,
+                "elective_total": course_elective,
+                "top_name": getattr(instructor_top, "name", "—") if instructor_top else "—",
+                "top_courses": int(getattr(instructor_top, "course_count", 0) or 0),
             },
         }
     )

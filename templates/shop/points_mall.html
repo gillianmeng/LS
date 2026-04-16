@@ -7,7 +7,7 @@
     {# 左：Banner + 积分规则；右：仅用户区（头像/积分/订单入口）。Grid 等高对齐。 #}
     <div class="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,30%)] lg:items-stretch">
         <div class="order-1 flex h-full min-h-0 min-w-0 flex-col gap-4">
-            <div class="shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm">
+            <div class="page-card shrink-0 overflow-hidden rounded-[1.4rem]">
                 <div class="relative aspect-[10/3] w-full">
                     <img
                         src="{% if banner_config.banner_points_mall %}{{ banner_config.banner_points_mall.url }}{% else %}{% static 'img/banners/points_mall_banner.png' %}{% endif %}"
@@ -21,11 +21,11 @@
                 </div>
             </div>
             {# 积分规则：上三卡 + 其余行正文 + 底栏提示，避免侧栏等高时大块留白 #}
-            <section id="points-rules" class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/80">
-                <div class="shrink-0 border-b border-slate-100 px-3 py-2.5 sm:px-4">
+            <section id="points-rules" class="page-card-soft flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.6rem]">
+                <div class="shrink-0 border-b border-slate-100 bg-gradient-to-r from-white via-sky-50/30 to-white px-3 py-2.5 sm:px-4">
                     <div class="flex flex-wrap items-end justify-between gap-2">
-                        <h2 class="text-sm font-semibold tracking-tight text-orange-600">积分规则</h2>
-                        <span class="text-[11px] text-slate-400">获取 · 上限 · 兑换</span>
+                        <h2 class="section-title text-sm font-semibold tracking-tight text-slate-900">积分规则</h2>
+                        <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-500 shadow-sm">获取 · 上限 · 兑换</span>
                     </div>
                 </div>
                 <div class="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-white via-orange-50/[0.07] to-orange-50/25">
@@ -35,7 +35,7 @@
                         <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
                             {% for line in points_earn_rule_lines %}
                             {% if forloop.counter <= 3 %}
-                            <div class="flex min-h-[5.5rem] flex-col rounded-xl border border-orange-100/90 bg-gradient-to-b from-orange-50/90 to-white p-3 shadow-sm ring-1 ring-orange-100/50">
+                            <div class="flex min-h-[5.5rem] flex-col rounded-2xl border border-orange-100/90 bg-gradient-to-b from-orange-50/90 to-white p-3 shadow-sm ring-1 ring-orange-100/50">
                                 <span class="text-[10px] font-bold uppercase tracking-wide text-orange-600">规则 {{ forloop.counter }}</span>
                                 <p class="mt-2 text-[11px] font-medium leading-relaxed text-slate-800">{{ line }}</p>
                             </div>
@@ -80,7 +80,7 @@
             </section>
         </div>
 
-        <aside class="order-2 flex h-full min-h-0 w-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <aside class="order-2 page-card-soft flex h-full min-h-0 w-full flex-col rounded-[1.3rem] p-4 sm:p-5">
             {% if user.is_authenticated %}
                 <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                     {% if user.avatar %}
@@ -97,7 +97,7 @@
                 </div>
                 <div class="mt-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
                     <p class="text-xs text-slate-600">我的可用积分</p>
-                    <p class="text-2xl font-bold tabular-nums text-orange-600">{{ user.points_balance }}</p>
+                    <p class="text-2xl font-bold tabular-nums text-slate-900">{{ user.points_balance }}</p>
                 </div>
             {% else %}
                 <p class="text-sm text-slate-600">登录后查看可用积分与订单。</p>
@@ -183,9 +183,9 @@
     </div>
 
     {# 积分商品：小卡片 + 固定比例图区（任意尺寸图片均 object-cover 居中裁切） #}
-    <div id="mall-products" class="mx-auto max-w-7xl scroll-mt-28 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/80">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 sm:px-4">
-            <h2 class="text-sm font-semibold tracking-tight text-orange-600">积分商品</h2>
+    <div id="mall-products" class="page-card-soft mx-auto max-w-7xl scroll-mt-28 overflow-hidden rounded-[1.6rem]">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-white via-orange-50/20 to-white px-3 py-2.5 sm:px-4">
+            <h2 class="section-title text-sm font-semibold tracking-tight text-slate-900">积分商品</h2>
             <form method="get" class="flex flex-wrap items-center gap-2 text-xs">
                 <label class="flex cursor-pointer items-center gap-1.5 text-slate-600">
                     <input type="checkbox" name="affordable" value="1" {% if affordable_only %}checked{% endif %} class="rounded border-slate-300 text-sky-600 focus:ring-sky-500" {% if not user.is_authenticated %}disabled title="登录后可用"{% endif %}>
@@ -208,9 +208,9 @@
             </form>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 p-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <div class="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {% for p in products %}
-                <article class="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/60 transition hover:border-orange-200/80 hover:shadow">
+                <article class="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100/60 transition hover:-translate-y-0.5 hover:border-orange-200/80 hover:shadow-md">
                     {# 固定 1:1 视口，图片绝对铺满，避免原图比例不一导致版面参差 #}
                     <div class="relative aspect-square w-full shrink-0 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
                         {% if p.image %}
@@ -219,10 +219,10 @@
                             <div class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">🎁</div>
                         {% endif %}
                     </div>
-                    <div class="flex min-h-0 flex-1 flex-col p-2">
-                        <p class="text-sm font-bold tabular-nums leading-tight text-orange-600">{{ p.points_cost }}<span class="ml-0.5 text-[10px] font-medium">分</span></p>
+                    <div class="flex min-h-0 flex-1 flex-col p-2.5">
+                        <p class="text-sm font-bold tabular-nums leading-tight text-slate-900">{{ p.points_cost }}<span class="ml-0.5 text-[10px] font-medium text-slate-500">分</span></p>
                         <h3 class="mt-1 line-clamp-2 min-h-[2.125rem] text-[11px] font-medium leading-snug text-slate-800">{{ p.name }}</h3>
-                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-1.5 text-[10px] tabular-nums text-slate-500">
+                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] tabular-nums text-slate-500">
                             <span>兑{{ p.redeemed_count }}</span>
                             <span>存{{ p.stock }}</span>
                         </div>
@@ -245,7 +245,7 @@
                                 {% if user.points_balance < p.points_cost %}
                                 <button type="button" disabled title="积分不足" class="cursor-not-allowed rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-400">不足</button>
                                 {% else %}
-                                <a href="{% url 'shop:mall_checkout' p.pk %}?return_q={{ search_q|urlencode }}&return_affordable={% if affordable_only %}1{% endif %}&return_sort={{ sort_key|urlencode }}" class="flex items-center justify-center rounded-md bg-orange-500 py-1 text-[10px] font-semibold text-white hover:bg-orange-600">兑换</a>
+                                <a href="{% url 'shop:mall_checkout' p.pk %}?return_q={{ search_q|urlencode }}&return_affordable={% if affordable_only %}1{% endif %}&return_sort={{ sort_key|urlencode }}" class="flex items-center justify-center rounded-md bg-sky-600 py-1 text-[10px] font-semibold text-white hover:bg-sky-700">兑换</a>
                                 {% endif %}
                             </div>
                             {% if p.cart_qty %}

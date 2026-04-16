@@ -4,8 +4,8 @@
 {% block content %}
 <div class="space-y-10">
     {# 首页 Banner：紧挨导航下方，全宽横图 #}
-    <section class="-mt-2" aria-label="球学堂横幅">
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+    <section class="page-card -mt-2 overflow-hidden rounded-[1.4rem]" aria-label="球学堂横幅">
+        <div class="overflow-hidden rounded-[1.4rem]">
             <img
                 src="{% if banner_config.banner_home %}{{ banner_config.banner_home.url }}{% else %}{% static 'img/banners/banner_home_qiuxuetang.png' %}{% endif %}"
                 alt="球学堂 — 雪球人儿自己的在线课堂"
@@ -19,14 +19,14 @@
     </section>
 
     {% if user.is_authenticated and trainings_featured %}
-    <section class="space-y-4" aria-label="培训推荐">
-        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2">
+    <section class="page-card-soft space-y-4 rounded-[1.4rem] p-5" aria-label="培训推荐">
+        <div class="section-title flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-lg font-bold text-slate-900">培训推荐</h2>
             <a href="{% url 'shop:activity_center' %}" class="shrink-0 text-sm font-medium text-sky-600 hover:underline">活动广场</a>
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {% for t in trainings_featured %}
-            <a href="{% url 'shop:training_detail' t.pk %}" class="group block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md">
+            <a href="{% url 'shop:training_detail' t.pk %}" class="group block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md hover:-translate-y-0.5">
                 <div class="relative aspect-[16/9] bg-gradient-to-br from-sky-100 to-indigo-100">
                     {% if t.cover %}
                     <img src="{{ t.cover.url }}" alt="" class="absolute inset-0 h-full w-full object-cover">
@@ -49,8 +49,8 @@
     {% endif %}
 
     {# 课程：左侧目录（与在线课堂一致）+ 推荐 / 最热 / 最新 Tab #}
-    <section class="space-y-4" id="courses-section">
-        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2">
+    <section class="page-card-soft space-y-4 rounded-[1.4rem] p-5" id="courses-section">
+        <div class="section-title flex flex-wrap items-end justify-between gap-3 pb-2">
             <h2 class="text-lg font-bold text-slate-900">课程</h2>
             {% if user.is_authenticated %}
             <a href="{% url 'courses:course_catalog' %}" class="shrink-0 text-sm font-medium text-sky-600 hover:underline">全部课程</a>
@@ -99,26 +99,26 @@
     </section>
 
     {% if user.is_authenticated %}
-    <section class="space-y-4">
-        <div class="flex items-center justify-between">
+    <section class="page-card-soft space-y-4 rounded-[1.4rem] p-5">
+        <div class="section-title flex items-center justify-between">
             <h2 class="text-lg font-bold text-slate-900">专业讲师</h2>
         </div>
         {% if instructors %}
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {% for ins in instructors %}
-                <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <a href="{% if ins.course_count %}{% url 'courses:instructor_detail' ins.pk %}{% else %}javascript:void(0){% endif %}" class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition {% if ins.course_count %}hover:border-sky-200 hover:shadow-md{% else %}cursor-default opacity-80{% endif %}" {% if not ins.course_count %}aria-disabled="true" tabindex="-1"{% endif %}>
                     {% if ins.display_avatar_url %}
-                    <img src="{{ ins.display_avatar_url }}" alt="" class="h-14 w-14 shrink-0 rounded-full object-cover">
+                    <img src="{{ ins.display_avatar_url }}" alt="" class="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white transition group-hover:ring-sky-100">
                     {% else %}
-                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 text-lg font-bold text-slate-700">
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 text-lg font-bold text-slate-700 transition group-hover:from-sky-300 group-hover:to-indigo-300">
                         {{ ins.name|slice:":1" }}
                     </div>
                     {% endif %}
                     <div class="min-w-0">
-                        <p class="truncate font-medium text-slate-800">{{ ins.name }}</p>
-                        <p class="truncate text-xs text-slate-500">{{ ins.title|default:"讲师" }}</p>
+                        <p class="truncate font-medium text-slate-800 group-hover:text-sky-700">{{ ins.name }}</p>
+                        <p class="truncate text-xs text-slate-500">{{ ins.title|default:"讲师" }} · {{ ins.course_count }} 门课</p>
                     </div>
-                </div>
+                </a>
             {% endfor %}
         </div>
         {% else %}
@@ -129,8 +129,8 @@
 
     {# 榜单排名：积分榜双列（仅登录用户） #}
     {% if user.is_authenticated %}
-    <section id="leaderboard" class="space-y-4 scroll-mt-24">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+    <section id="leaderboard" class="page-card-soft space-y-4 rounded-[1.4rem] p-5 scroll-mt-24">
+        <div class="section-title flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-lg font-bold text-slate-900">榜单排名</h2>
             <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span>积分榜</span>

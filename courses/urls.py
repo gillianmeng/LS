@@ -8,6 +8,7 @@ urlpatterns = [
     path("api/focus-blur/", views.focus_blur_report, name="focus_blur_report"),
     path("exam/<int:pk>/launch/", views.exam_launch, name="exam_launch"),
     path("all/", views.course_catalog, name="course_catalog"),
+    path("instructor/<int:pk>/", views.instructor_detail, name="instructor_detail"),
     path("course/<int:pk>/", views.course_detail, name="course_detail"),
     path("course/<int:pk>/complete/", views.course_mark_complete, name="course_mark_complete"),
     path(

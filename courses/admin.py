@@ -44,15 +44,16 @@ class CourseAdmin(OptionalFileFieldsAdminMixin, admin.ModelAdmin):
         "content_kind",
         "course_type",
         "catalog_category",
+        "instructor",
         "is_recommended",
         "exclude_from_hot_ranking",
     )
-    search_fields = ("name", "description", "article_body")
+    search_fields = ("name", "description", "article_body", "instructor__name", "instructor__title")
     readonly_fields = ("created_at", "view_count")
     list_per_page = 50
     save_on_top = True
     fieldsets = (
-        ("基本信息", {"fields": ("name", "course_type", "catalog_category", "description")}),
+        ("基本信息", {"fields": ("name", "course_type", "catalog_category", "instructor", "description")}),
         (
             "必修期限与提醒",
             {

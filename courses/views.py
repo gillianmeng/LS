@@ -8,8 +8,8 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import DatabaseError, transaction
-from django.db.models import F, Prefetch, Sum
-from django.http import JsonResponse
+from django.db.models import Count, F, Prefetch, Sum
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -28,6 +28,7 @@ from courses.models import (
     LearningRecord,
 )
 from learning_system.oss_signed_urls import sign_oss_get_url
+from shop.models import Training
 from users.models import LeaderboardConfig
 
 
@@ -96,6 +97,47 @@ def _course_has_playable_video(course: Course) -> bool:
     return bool((course.video_url or "").strip())
 
 
+def _instructor_courses_summary(instructor: Instructor):
+    """讲师页：按课程主讲讲师归类，展示讲过的课与级别。"""
+    related_courses = list(
+        Course.objects.filter(instructor=instructor)
+        .order_by("-created_at")
+        .select_related("instructor")
+    )
+    course_rows = [
+        {
+            "course": course,
+            "level": course.course_type,
+            "level_label": course.get_course_type_display(),
+            "content_label": course.get_content_kind_display(),
+            "reward_points": course.reward_points,
+        }
+        for course in related_courses
+    ]
+
+    training_rows = []
+    if instructor.name:
+        related_trainings = (
+            Training.objects.filter(instructor_name__icontains=instructor.name)
+            .order_by("-created_at")
+            .distinct()
+        )
+        training_rows = [
+            {"training": t, "category_label": t.get_applications_category_display()}
+            for t in related_trainings
+        ]
+
+    course_total = len(course_rows)
+    required_count = sum(1 for row in course_rows if row["level"] == Course.CourseType.REQUIRED)
+    elective_count = course_total - required_count
+
+    return course_rows, training_rows, {
+        "course_total": course_total,
+        "required_count": required_count,
+        "elective_count": elective_count,
+    }
+
+
 def _required_video_must_ack_playthrough(course: Course) -> bool:
     """必修 + 视频 + 已有视频源：须先确认完整观看，才允许标记学完。"""
     return (
@@ -108,7 +150,7 @@ def _required_video_must_ack_playthrough(course: Course) -> bool:
 @login_required
 def course_catalog(request):
     """全部课程列表（公开），支持左侧目录与 ?category= 筛选。"""
-    qs = Course.objects.select_related("catalog_category").order_by("-created_at")
+    qs = Course.objects.select_related("catalog_category", "instructor", "instructor__employee").order_by("-created_at")
     search_q = request.GET.get("q", "").strip()
     raw_cat = request.GET.get("category", "").strip()
 
@@ -142,7 +184,7 @@ def course_catalog(request):
 @require_POST
 def course_mark_complete(request, pk):
     """学员标记学完：写入学习记录并触发完课积分（若首次且未触达每日上限）。"""
-    course = get_object_or_404(Course, pk=pk)
+    course = get_object_or_404(Course.objects.select_related("catalog_category", "instructor", "instructor__employee"), pk=pk)
     if course.focus_monitor_enabled and course.focus_max_blurs is not None:
         if course.focus_on_course_exceed == Course.FocusCourseAction.BLOCK_COMPLETE:
             acc = CourseFocusAccum.objects.filter(employee=request.user, course=course).first()
@@ -408,9 +450,28 @@ def exam_launch(request, pk):
 
 
 @login_required
+def instructor_detail(request, pk):
+    """讲师详情：展示讲师讲过的课程与关联培训。"""
+    instructor = get_object_or_404(Instructor.objects.select_related("employee"), pk=pk)
+    if not Course.objects.filter(instructor=instructor).exists():
+        raise Http404("该讲师暂无关联课程")
+    course_rows, training_rows, stats = _instructor_courses_summary(instructor)
+    return render(
+        request,
+        "courses/instructor_detail.html",
+        {
+            "instructor": instructor,
+            "course_rows": course_rows,
+            "training_rows": training_rows,
+            "stats": stats,
+        },
+    )
+
+
+@login_required
 def course_detail(request, pk):
     """课程详情：视频播放与简介（登录可访问，点击即计入浏览量）。"""
-    course = get_object_or_404(Course, pk=pk)
+    course = get_object_or_404(Course.objects.select_related("catalog_category", "instructor", "instructor__employee"), pk=pk)
     Course.objects.filter(pk=pk).update(view_count=F("view_count") + 1)
     course.refresh_from_db(fields=["view_count"])
 
@@ -469,6 +530,7 @@ def course_detail(request, pk):
         "courses/course_detail.html",
         {
             "course": course,
+            "course_instructor": course.instructor,
             "learning_record": learning_record,
             "youtube_embed_url": youtube_embed_url,
             "course_video_src": course_video_src,
@@ -510,6 +572,8 @@ def get_dashboard_context(request):
 
     instructors = list(
         Instructor.objects.filter(is_published=True)
+        .annotate(course_count=Count("courses", distinct=True))
+        .filter(course_count__gt=0)
         .select_related("employee")
         .order_by("sort_order", "id")[:8]
     )
