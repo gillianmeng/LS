@@ -1,6 +1,27 @@
 {% load i18n %}
 <button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
+  <script>
+    (function () {
+      const key = "ls-admin-nav-scroll-top";
+      const nav = document.getElementById("nav-sidebar");
+      if (!nav) return;
+
+      function save() {
+        sessionStorage.setItem(key, String(nav.scrollTop || 0));
+      }
+
+      function restore() {
+        const saved = Number(sessionStorage.getItem(key) || 0);
+        if (saved > 0) nav.scrollTop = saved;
+      }
+
+      window.addEventListener("load", restore);
+      nav.addEventListener("scroll", save, { passive: true });
+      nav.addEventListener("click", save, true);
+      window.addEventListener("beforeunload", save);
+    })();
+  </script>
   <div class="ls-nav-brand"></div>
 
   <div class="ls-nav-groups">

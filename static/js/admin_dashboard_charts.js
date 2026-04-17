@@ -3,8 +3,10 @@
   const lineHoursEl = document.getElementById("ls-chart-line-hours");
   const pieEl = document.getElementById("ls-chart-pie");
   const radarEl = document.getElementById("ls-chart-radar");
+  const pointsEl = document.getElementById("ls-chart-points");
+  const productEl = document.getElementById("ls-chart-product");
   const tabsEl = document.getElementById("ls-time-tabs");
-  if (!linePeopleEl || !lineHoursEl || !pieEl || !radarEl) return;
+  if (!linePeopleEl || !lineHoursEl || !pieEl || !radarEl || !pointsEl || !productEl) return;
 
   let currentRange = "month";
   let charts = null;
@@ -243,6 +245,73 @@
     };
   }
 
+  function barOption(payload, p, title) {
+    return {
+      color: [p.indigo],
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, backgroundColor: p.tooltipBg, borderWidth: 0, textStyle: { color: "#fff" } },
+      grid: { left: 44, right: 18, top: 28, bottom: 36 },
+      xAxis: {
+        type: "category",
+        data: payload.labels || [],
+        axisLine: { lineStyle: { color: p.grid } },
+        axisTick: { show: false },
+        axisLabel: { color: p.text },
+      },
+      yAxis: {
+        type: "value",
+        splitLine: { lineStyle: { color: p.grid } },
+        axisLabel: { color: p.text },
+      },
+      series: [{
+        name: title,
+        type: "bar",
+        barWidth: "42%",
+        itemStyle: {
+          borderRadius: [8, 8, 0, 0],
+          color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: p.indigo },
+            { offset: 1, color: p.sky },
+          ]),
+        },
+        data: payload.values || [],
+      }],
+      animationDuration: 450,
+    };
+  }
+
+  function pointsBarOption(payload, p) {
+    return barOption(payload, p, "积分分类");
+  }
+
+  function productRadarOption(payload, p) {
+    const values = payload.values || [];
+    const maxVal = Math.max(10, ...values);
+    return {
+      color: [p.sky],
+      tooltip: { trigger: "item", backgroundColor: p.tooltipBg, borderWidth: 0, textStyle: { color: "#fff" } },
+      radar: {
+        indicator: (payload.labels || []).map((label, idx) => ({ name: label, max: Math.max(maxVal, 10) })),
+        radius: "68%",
+        center: ["50%", "54%"],
+        splitNumber: 4,
+        axisName: { color: p.text, fontSize: 12 },
+        axisLine: { lineStyle: { color: p.grid } },
+        splitLine: { lineStyle: { color: [p.grid] } },
+        splitArea: { areaStyle: { color: ["rgba(14,165,233,0.03)", "rgba(14,165,233,0.01)"] } },
+      },
+      series: [{
+        type: "radar",
+        symbol: "circle",
+        symbolSize: 6,
+        lineStyle: { width: 2.5, color: p.sky },
+        areaStyle: { opacity: 0.14, color: p.sky },
+        itemStyle: { color: p.sky },
+        data: [{ value: values, name: "商品经营" }]
+      }],
+      animationDuration: 450,
+    };
+  }
+
   async function renderCharts() {
     const p = getPalette();
     setCanvasState("is-loading", "图表加载中...");
@@ -259,6 +328,12 @@
     charts.lineHours.setOption(lineHoursOption(data.line_hours || {}, p), true);
     charts.pie.setOption(pieOption(data.pie || {}, p), true);
     charts.radar.setOption(radarOption(data.radar || {}, p), true);
+    charts.points = charts.points || initChart(pointsEl);
+    charts.product = charts.product || initChart(productEl);
+    charts.points.clear();
+    charts.product.clear();
+    charts.points.setOption(pointsBarOption(data.points_bar || {}, p), true);
+    charts.product.setOption(productRadarOption(data.product_bar || {}, p), true);
     setCanvasState("", "");
   }
 
@@ -284,6 +359,8 @@
           "ls-chart-line-hours": charts.lineHours,
           "ls-chart-pie": charts.pie,
           "ls-chart-radar": charts.radar,
+          "ls-chart-points": charts.points,
+          "ls-chart-product": charts.product,
         };
         const chart = map[id];
         if (!chart) return;
@@ -327,6 +404,8 @@
         lineHours: initChart(lineHoursEl),
         pie: initChart(pieEl),
         radar: initChart(radarEl),
+        points: initChart(pointsEl),
+        product: initChart(productEl),
       };
       bindEvents();
       await renderCharts();

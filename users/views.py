@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
 from datetime import timedelta
 
 from django.db.models import Count, Q
@@ -33,6 +35,22 @@ class EmployeeLoginView(LoginView):
         except Exception:
             logging.getLogger(__name__).exception("每日登录积分发放失败")
         return resp
+
+
+@receiver(user_logged_in)
+def log_user_login(sender, request, user, **kwargs):
+    try:
+        from courses.models import LoginLog
+
+        LoginLog.objects.create(
+            employee=user,
+            ip_address=(request.META.get("REMOTE_ADDR") or "").strip() or None,
+            user_agent=(request.META.get("HTTP_USER_AGENT") or "").strip()[:300],
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("登录日志写入失败")
 
 
 @require_http_methods(["GET", "POST"])
@@ -188,7 +206,7 @@ def admin_dashboard_chart_data(request):
         return JsonResponse({"detail": "forbidden"}, status=403)
 
     from courses.models import Course, ExamRecord, Instructor, LearningRecord
-    from shop.models import TrainingRegistration
+    from shop.models import ExchangeRecord, PointsLedger, Product, TrainingRegistration
     from users.models import Employee
 
     today = timezone.localdate()
@@ -229,39 +247,58 @@ def admin_dashboard_chart_data(request):
     # - 活跃人数：按登录（Employee.last_login）去重统计
     # - 学习人数：按学习行为（LearningRecord.updated_at）去重统计
     # - 活跃时长 / 学习时长：暂无会话明细时采用人数驱动的估算值（用于趋势展示）
+    #
+    # 线上（MySQL）若未导入时区表，`__date` 可能触发 CONVERT_TZ 返回 NULL，
+    # 导致“明明有登录/学习却统计为 0”。这里改为“时间范围过滤 + Python 本地日期聚合”，
+    # 避免依赖数据库时区函数。
     learning_people_counts = {d: 0 for d in axis_days}
     exam_counts = {d: 0 for d in axis_days}
     active_people_counts = {d: 0 for d in axis_days}
 
-    learning_people_rows = (
-        LearningRecord.objects.filter(updated_at__date__gte=start, updated_at__date__lte=end)
-        .values("updated_at__date")
-        .annotate(c=Count("employee", distinct=True))
+    range_start = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
+    range_end_exclusive = timezone.make_aware(
+        timezone.datetime.combine(end + timedelta(days=1), timezone.datetime.min.time())
     )
-    for row in learning_people_rows:
-        d = row["updated_at__date"]
-        if d in learning_people_counts:
-            learning_people_counts[d] = row["c"]
 
-    exam_rows = (
-        ExamRecord.objects.filter(submitted_at__date__gte=start, submitted_at__date__lte=end)
-        .values("submitted_at__date")
-        .annotate(c=Count("id"))
-    )
-    for row in exam_rows:
-        d = row["submitted_at__date"]
-        if d in exam_counts:
-            exam_counts[d] = row["c"]
+    learning_people_seen = {d: set() for d in axis_days}
+    learning_rows = LearningRecord.objects.filter(
+        updated_at__gte=range_start,
+        updated_at__lt=range_end_exclusive,
+    ).values_list("updated_at", "employee_id")
+    for updated_at, employee_id in learning_rows:
+        if not updated_at or not employee_id:
+            continue
+        day = timezone.localtime(updated_at).date()
+        if day in learning_people_seen:
+            learning_people_seen[day].add(employee_id)
+    for day, ids in learning_people_seen.items():
+        learning_people_counts[day] = len(ids)
 
-    active_people_rows = (
-        Employee.objects.filter(last_login__isnull=False, last_login__date__gte=start, last_login__date__lte=end)
-        .values("last_login__date")
-        .annotate(c=Count("id", distinct=True))
-    )
-    for row in active_people_rows:
-        d = row["last_login__date"]
-        if d in active_people_counts:
-            active_people_counts[d] = row["c"]
+    exam_rows = ExamRecord.objects.filter(
+        submitted_at__gte=range_start,
+        submitted_at__lt=range_end_exclusive,
+    ).values_list("submitted_at", flat=True)
+    for submitted_at in exam_rows:
+        if not submitted_at:
+            continue
+        day = timezone.localtime(submitted_at).date()
+        if day in exam_counts:
+            exam_counts[day] += 1
+
+    active_people_seen = {d: set() for d in axis_days}
+    active_rows = Employee.objects.filter(
+        last_login__isnull=False,
+        last_login__gte=range_start,
+        last_login__lt=range_end_exclusive,
+    ).values_list("last_login", "id")
+    for last_login, employee_id in active_rows:
+        if not last_login or not employee_id:
+            continue
+        day = timezone.localtime(last_login).date()
+        if day in active_people_seen:
+            active_people_seen[day].add(employee_id)
+    for day, ids in active_people_seen.items():
+        active_people_counts[day] = len(ids)
 
     if range_key == "year":
         labels = [d.strftime("%m") for d in axis_days]
@@ -279,6 +316,14 @@ def admin_dashboard_chart_data(request):
     learning_total = LearningRecord.objects.count()
     learning_completed = LearningRecord.objects.filter(is_completed=True).count()
     exam_total = ExamRecord.objects.count()
+    points_daily_login = PointsLedger.objects.filter(source=PointsLedger.Source.DAILY_LOGIN).count()
+    points_learning = PointsLedger.objects.filter(source=PointsLedger.Source.COURSE_COMPLETE).count()
+    points_admin_adjust = PointsLedger.objects.filter(source=PointsLedger.Source.ADMIN_ADJUST).count()
+    points_total = PointsLedger.objects.count()
+    product_total = Product.objects.count()
+    exchange_total = ExchangeRecord.objects.count()
+    product_in_stock = Product.objects.filter(stock__gt=0).count()
+    product_out_stock = max(0, product_total - product_in_stock)
 
     login_active_total = Employee.objects.filter(last_login__isnull=False).count()
 
@@ -330,6 +375,22 @@ def admin_dashboard_chart_data(request):
                     training_regs,
                     learning_completed,
                 ],
+            },
+            "points_bar": {
+                "labels": ["登录积分", "学习积分", "完课积分", "管理员调整"],
+                "values": [points_daily_login, points_learning, learning_completed, points_admin_adjust],
+            },
+            "product_bar": {
+                "labels": ["商品种类", "订单数量", "库存总数"],
+                "values": [product_total, exchange_total, product_in_stock],
+            },
+            "points_summary": {
+                "login_total": int(points_daily_login),
+                "learning_total": int(points_learning),
+                "completed_total": int(learning_completed),
+                "adjust_total": int(points_admin_adjust),
+                "product_total": int(product_total),
+                "exchange_total": int(exchange_total),
             },
             "instructor_bar": {
                 "labels": instructor_bar_labels,

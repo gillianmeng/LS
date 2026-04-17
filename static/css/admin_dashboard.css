@@ -28,30 +28,56 @@ body.dashboard #content-main.ls-dash-wrap {
 }
 
 body.dashboard #nav-sidebar {
-  background: linear-gradient(180deg, #f8fbff 0%, #fff4f7 100%);
-  border-right: 1px solid #dce8f7;
+  background: linear-gradient(180deg, #f8fcff 0%, #f2fbff 100%);
+  border-right: 1px solid #d8e8f7;
+  transition: width 0.2s ease, transform 0.2s ease, padding 0.2s ease;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body.dashboard.sidebar-collapsed #nav-sidebar {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-right-width: 0 !important;
+}
+body.dashboard.sidebar-collapsed #nav-sidebar .ls-nav-groups,
+body.dashboard.sidebar-collapsed #nav-sidebar .ls-nav-brand {
+  display: none !important;
 }
 
 html[data-theme="dark"] body.dashboard #nav-sidebar {
-  background: #f8fbff !important;
-  border-right: 1px solid #dce8f7 !important;
+  background: linear-gradient(180deg, #f8fcff 0%, #f2fbff 100%) !important;
+  border-right: 1px solid #d8e8f7 !important;
 }
 
 body.dashboard #nav-sidebar .ls-nav-brand,
 body.dashboard #nav-sidebar .ls-nav-group,
 body.dashboard #nav-sidebar .ls-nav-subgroup {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #dfeaf7;
 }
 
 body.dashboard #nav-sidebar .ls-nav-group h3,
-body.dashboard #nav-sidebar .ls-nav-subgroup h4,
+body.dashboard #nav-sidebar .ls-nav-subgroup h4 {
+  background: linear-gradient(135deg, #eff9ff 0%, #f7f3ff 100%);
+  color: #234567;
+}
+
 body.dashboard #nav-sidebar .ls-nav-links a {
-  color: #334155;
+  color: #41556f;
+}
+
+body.dashboard #nav-sidebar .ls-nav-links a:hover {
+  background: linear-gradient(135deg, #eff9ff 0%, #f3f7ff 100%);
+  color: #0f5bd7;
 }
 
 body.dashboard #nav-sidebar .ls-nav-links a.is-active {
-  background: linear-gradient(135deg, rgba(55, 182, 255, 0.18), rgba(255, 107, 138, 0.18));
-  color: #0f5bd7;
+  background: linear-gradient(135deg, #dff6ff 0%, #e8e5ff 100%);
+  color: #0b63d1;
 }
 
 .ls-right-workspace {

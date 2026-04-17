@@ -708,6 +708,62 @@ class LearningRecord(models.Model):
 class LearningPreference(models.Model):
     """学员学习提醒与完课反馈等偏好（一对一）。"""
 
+
+class LoginLog(models.Model):
+    """员工登录日志：用于后台「当天登录人数」与活跃趋势统计。"""
+
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="login_logs",
+        verbose_name="员工",
+    )
+    logged_at = models.DateTimeField(auto_now_add=True, verbose_name="登录时间")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="IP 地址")
+    user_agent = models.CharField(max_length=300, blank=True, verbose_name="User-Agent")
+
+    class Meta:
+        verbose_name = "登录日志"
+        verbose_name_plural = "登录日志"
+        ordering = ["-logged_at"]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} @ {self.logged_at:%Y-%m-%d %H:%M:%S}"
+
+
+class LearningSession(models.Model):
+    """课程学习会话：记录打开学习页后的停留时长与是否完成。"""
+
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="learning_sessions",
+        verbose_name="员工",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="learning_sessions",
+        verbose_name="课程",
+    )
+    started_at = models.DateTimeField(auto_now_add=True, verbose_name="开始时间")
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
+    duration_seconds = models.PositiveIntegerField(default=0, verbose_name="学习时长（秒）")
+    is_completed = models.BooleanField(default=False, verbose_name="是否完结")
+    source_page = models.CharField(max_length=50, blank=True, verbose_name="来源页面")
+
+    class Meta:
+        verbose_name = "学习会话"
+        verbose_name_plural = "学习会话"
+        ordering = ["-started_at"]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} · {self.course_id} · {self.duration_seconds}s"
+
+
+class LearningPreference(models.Model):
+    """学员学习提醒与完课反馈等偏好（一对一）。"""
+
     employee = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

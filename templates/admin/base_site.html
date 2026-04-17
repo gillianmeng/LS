@@ -4,7 +4,8 @@
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/admin_theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_theme.css' %}?v=rollback-20260417-1">
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}?v=rollback-20260417-1">
 {% endblock %}
 
 {% block branding %}

@@ -1,20 +1,15 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base.html" %}
 {% load static %}
 
-{% block extrastyle %}{{ block.super }}
-<link rel="stylesheet" href="{% static "admin/css/dashboard.css" %}">
-<link rel="stylesheet" href="{% static "css/admin_dashboard.css" %}">
-{% endblock %}
-
 {% block extrahead %}{{ block.super }}
-<script src="{% static 'js/echarts.min.js' %}" defer></script>
-<script src="{% static 'js/admin_shortcuts.js' %}" defer></script>
-<script src="{% static 'js/admin_dashboard_charts.js' %}" defer></script>
+<script src="{% static 'js/echarts.min.js' %}?v=20260417a" defer></script>
+<script src="{% static 'js/admin_shortcuts.js' %}?v=20260417a" defer></script>
+<script src="{% static 'js/admin_dashboard_charts.js' %}?v=20260417a" defer></script>
 {% endblock %}
 
 {% block coltype %}colM{% endblock %}
-{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
-{% block nav-breadcrumbs %}{% endblock %}
+{% block bodyclass %}dashboard{% endblock %}
+{% block breadcrumbs %}{% endblock %}
 {% block content_title %}{% endblock %}
 
 {% block content %}
@@ -85,6 +80,23 @@
         </div>
       </div>
 
+      <div class="ls-chart-grid">
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>积分分类</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-points">下载 PNG</button>
+          </div>
+          <div id="ls-chart-points" class="ls-chart-canvas"></div>
+        </div>
+        <div class="ls-chart-card">
+          <div class="ls-chart-head">
+            <h3>商品经营</h3>
+            <button type="button" class="ls-chart-download" data-chart-id="ls-chart-product">下载 PNG</button>
+          </div>
+          <div id="ls-chart-product" class="ls-chart-canvas"></div>
+        </div>
+      </div>
+
     </section>
   </div>
 </div>
@@ -104,5 +116,3 @@
   </div>
 </div>
 {% endblock %}
-
-{% block sidebar %}{% endblock %}
