@@ -88,22 +88,22 @@ python manage.py bootstrap_admin
 | `OSS_PUBLIC_ENDPOINT` | _(空)_ | 浏览器加载封面/头像/签名视频用；未设且 `OSS_ENDPOINT` 为内网时，代码会推导公网域名 |
 | `OSS_BUCKET_NAME` 等 | 见 `env.example` | 与阿里云控制台 Bucket、AK/SK 一致 |
 
-## 私密配置说明
+## 部署与密钥管理
 
-为避免把密钥提交到 GitHub，请按下面方式存放敏感信息：
+为了更适合公司部署环境，推荐采用“配置模板 + 私密文件/环境变量”的方式管理密钥：
 
-- `config/env.sep`：仅放可公开的 Sep 环境占位与说明，不写真实密钥
-- `config/env.secret`：仅存放本地或部署机上的真实密钥文件，**不要提交到仓库**
-- `config/env.secret.example`：密钥模板示例，可复制为 `config/env.secret` 后再填写真实值
+- `config/env.sep`：部署模板，仅保留可公开配置与占位符，不写真实密钥
+- `config/env.secret.example`：私密文件模板，可复制为 `config/env.secret` 后在本机或部署机填写真实值
+- `config/env.secret`：真实密钥文件，仅保留在本地开发机或部署机上，**不要提交到仓库**
 
-建议流程：
+建议使用方式：
 
 ```bash
 cp config/env.secret.example config/env.secret
 # 在 config/env.secret 中填写真实 OSS / MySQL 密钥
 ```
 
-如果部署平台支持环境变量注入，也可以直接由 Secret/环境变量提供密钥，不必落盘。
+如果部署平台支持 Secret / 环境变量注入，也可以不落盘，直接由平台提供这些值。这样更适合公司内网、容器化或 CI/CD 部署，能避免把密钥写进 Git 历史。
 
 ## 仓库与分支
 
